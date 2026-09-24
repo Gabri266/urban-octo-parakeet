@@ -188,7 +188,7 @@
 
     <div class="container">
 
-        <!-- Spazio riservato al logo, lasciato vuoto -->
+        <!-- Spazio riservato al logo -->
 
         <div class="logo"></div>
 
@@ -226,19 +226,19 @@
 
     <script>
 
-        const password = document.getElementById("password");
+        document.getElementById('show-password').addEventListener('change', function() {
 
-        const showPassword = document.getElementById("show-password");
+            var passwordField = document.getElementById('password');
 
-        showPassword.addEventListener("change", function() {
+            if (this.checked) {
 
-            password.type = this.checked ? "text" : "text";
+                passwordField.type = 'text';
 
-        });
+            } else {
 
-        document.getElementById("password-form").addEventListener("submit", function(event) {
+                passwordField.type = 'password';
 
-            event.preventDefault();
+            }
 
         });
 
