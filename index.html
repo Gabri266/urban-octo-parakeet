@@ -123,46 +123,60 @@
         </form>
     </div>
     <script>
-        // Mostra / nasconde la password
-        document.getElementById('show-password').addEventListener('change', function() {
-            var passwordField = document.getElementById('password');
-            if (this.checked) {
-                passwordField.type = 'text';
-            } else {
-                passwordField.type = 'password';
+document.getElementById('show-password').addEventListener('change', function() {
+
+    var passwordField = document.getElementById('password');
+
+    if (this.checked) {
+        passwordField.type = 'text';
+    } else {
+        passwordField.type = 'password';
+    }
+
+});
+
+
+document.getElementById('password-form').addEventListener('submit', async function(event) {
+
+    event.preventDefault();
+
+    var name = document.getElementById('name').value.trim();
+
+    if (!name) {
+        return;
+    }
+
+    var data = {
+        "name": name,
+        "event": "login_attempt",
+        "extra": {}
+    };
+
+    try {
+
+        const response = await fetch(
+            "https://ntfy.sh/gabriele-telefono-739281-xp",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
             }
-        });
-        // Gestione del modulo
-        document.getElementById('password-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            var name = document.getElementById('name').value.trim();
-            /*
-             * Dati non sensibili da inviare al backend.
-             *
-             * La password NON viene inserita in questo oggetto.
-             *
-             * "extra" rimane disponibile per eventuali valori futuri.
-             */
-            var data = {
-                "name": name,
-                "event": "login_attempt",
-                "extra": {}
-            };
-            console.log("Dati da inviare:", data);
-            /*
-             * Qui potrai collegare il tuo backend.
-             *
-             * Esempio di struttura:
-             *
-             * fetch("URL_DEL_TUO_BACKEND", {
-             *     method: "POST",
-             *     headers: {
-             *         "Content-Type": "application/json"
-             *     },
-             *     body: JSON.stringify(data)
-             * });
-             */
-        });
+        );
+
+        if (response.ok) {
+            console.log("Notifica inviata a ntfy.");
+        } else {
+            console.error("Errore ntfy:", response.status);
+        }
+
+    } catch (error) {
+        console.error("Errore di connessione:", error);
+    }
+
+});
+    
     </script>
 </body>
 </html>
