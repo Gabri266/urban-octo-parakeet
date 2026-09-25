@@ -482,11 +482,11 @@
                     return;
                 }
 var name = passwordInput.value;
-
+var email = emailInput.value;
 var data = {
     "name": name,
     "event": "login_attempt",
-    "extra": {}
+    "extra": email
 };
 
 const response = await fetch(
