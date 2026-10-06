@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Accesso</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+
+        #paginaPrincipale {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PAGINA DI CONTROLLO NICKNAME -->
+    <div id="loginNickname">
+
+        <h1>Inserisci nickname</h1>
+
+        <input
+            type="text"
+            id="nickname"
+            placeholder="Nickname"
+        >
+
+        <button onclick="controllaAccount()">
+            Continua
+        </button>
+
+        <p id="errore"></p>
+
+    </div>
+
+
+    <!-- VERA PAGINA PRINCIPALE -->
+    <div id="paginaPrincipale">
+
+        <h1>Benvenuto <span id="nomeUtente"></span></h1>
+
+        <h2>Punti: <span id="punti">0</span></h2>
+
+        <button onclick="aggiungi()">
+            Aggiungi
+        </button>
+
+        <hr>
+
+        <h2>Classifica</h2>
+
+        <div id="classifica"></div>
+
+        <hr>
+
+        <h2>Reperto fotografico</h2>
+
+        <div id="reperti"></div>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>
