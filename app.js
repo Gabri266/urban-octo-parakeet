@@ -1,6 +1,7 @@
 /* =========================================================
    CONFIGURAZIONE
 ========================================================= */
+console.log("SCRIPT.JS CARICATO CORRETTAMENTE");
 
 const GAME_CONFIG = {
 
