@@ -1,0 +1,405 @@
+```css
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f5f7;
+    color: #111;
+    min-height: 100vh;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+
+/* =========================
+   GENERALE
+========================= */
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+.login-box {
+    width: 100%;
+    max-width: 380px;
+    background: white;
+    padding: 35px 25px;
+    border-radius: 22px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.login-box h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.login-box p {
+    color: #777;
+    margin-bottom: 25px;
+}
+
+.login-box input {
+    width: 100%;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 12px;
+    outline: none;
+    margin-bottom: 12px;
+}
+
+.login-box input:focus {
+    border-color: #111;
+}
+
+.login-box button {
+    width: 100%;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    background: #111;
+    color: white;
+    font-weight: bold;
+}
+
+.error {
+    color: #d33 !important;
+    margin-top: 12px;
+    margin-bottom: 0 !important;
+}
+
+
+/* =========================
+   PAGINE
+========================= */
+
+.page {
+    min-height: 100vh;
+    padding: 30px 20px 120px;
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+
+/* =========================
+   HOME
+========================= */
+
+.top {
+    margin-top: 10px;
+    font-size: 20px;
+}
+
+.top span {
+    color: #777;
+}
+
+.top strong {
+    display: block;
+    font-size: 28px;
+    margin-top: 5px;
+}
+
+.score-container {
+    text-align: center;
+    margin-top: 90px;
+}
+
+.score-label {
+    color: #777;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.score {
+    font-size: 100px;
+    line-height: 1;
+    font-weight: 800;
+    margin: 15px 0;
+}
+
+.level {
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: #111;
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.add-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: min(90%, 350px);
+    margin: 65px auto 0;
+
+    padding: 18px;
+    border: none;
+    border-radius: 16px;
+
+    background: #111;
+    color: white;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.add-button span {
+    font-size: 25px;
+}
+
+.add-button:active {
+    transform: scale(0.97);
+}
+
+.status {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+}
+
+
+/* =========================
+   CLASSIFICA
+========================= */
+
+.page h1 {
+    font-size: 32px;
+    margin-bottom: 25px;
+}
+
+.ranking-level {
+    margin-bottom: 25px;
+}
+
+.ranking-level h2 {
+    font-size: 17px;
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: white;
+    padding: 15px;
+
+    border-radius: 14px;
+    margin-bottom: 8px;
+}
+
+.ranking-position {
+    width: 35px;
+    font-weight: bold;
+}
+
+.ranking-name {
+    flex: 1;
+    font-weight: bold;
+}
+
+.ranking-score {
+    font-weight: bold;
+}
+
+
+/* =========================
+   REPERTI
+========================= */
+
+.private-text {
+    color: #777;
+    margin-bottom: 25px;
+}
+
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.gallery-item {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.gallery-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+}
+
+.gallery-info {
+    padding: 10px;
+    font-size: 13px;
+    color: #555;
+}
+
+
+/* =========================
+   NAVIGAZIONE
+========================= */
+
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 75px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    background: white;
+    border-top: 1px solid #ddd;
+
+    z-index: 100;
+}
+
+.nav-button {
+    border: none;
+    background: transparent;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 4px;
+
+    color: #888;
+}
+
+.nav-button span {
+    font-size: 24px;
+}
+
+.nav-button small {
+    font-size: 11px;
+}
+
+.nav-button.active {
+    color: #111;
+    font-weight: bold;
+}
+
+
+/* =========================
+   MODALE
+========================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 500;
+}
+
+.modal-box {
+    background: white;
+    width: 100%;
+    max-width: 420px;
+
+    border-radius: 20px;
+    padding: 20px;
+
+    text-align: center;
+}
+
+.modal-box h2 {
+    margin-bottom: 15px;
+}
+
+.modal-box img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+
+    border-radius: 12px;
+    background: #eee;
+}
+
+#verificationResult {
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+#closeModal {
+    width: 100%;
+    padding: 14px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #111;
+    color: white;
+}
+
+
+/* =========================
+   DESKTOP
+========================= */
+
+@media (min-width: 700px) {
+
+    .page {
+        max-width: 650px;
+        margin: auto;
+    }
+
+    .bottom-nav {
+        max-width: 650px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 20px 20px 0 0;
+    }
+
+}
+```
