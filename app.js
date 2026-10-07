@@ -1,38 +1,119 @@
+```javascript
+/* =========================================================
+   CONFIGURAZIONE ACCOUNT
+========================================================= */
+
+/*
+    PER ORA gli account sono qui.
+
+    In futuro questa parte verrà sostituita
+    dal database.
+
+    Formato:
+
+    "nickname": "password"
+*/
+
+const ACCOUNTS = {
+
+    "Gabriele": "1234",
+
+    "Mario": "5678",
+
+    "Luca": "abcd"
+
+};
+
+
+/* =========================================================
+   CONFIGURAZIONE GIOCO
+========================================================= */
+
+const GAME_CONFIG = {
+
+    obiettivo: {
+        nome: "Reperto",
+        punti: 10
+    },
+
+    livelli: [
+
+        {
+            nome: "LIVELLO 1",
+            minimo: 0
+        },
+
+        {
+            nome: "LIVELLO 2",
+            minimo: 50
+        },
+
+        {
+            nome: "LIVELLO 3",
+            minimo: 100
+        },
+
+        {
+            nome: "LIVELLO 4",
+            minimo: 250
+        },
+
+        {
+            nome: "LIVELLO 5",
+            minimo: 500
+        }
+
+    ]
+
+};
+
+
 /* =========================================================
    COOKIE
 ========================================================= */
 
 function getCookie(name) {
 
-    const cookies = document.cookie.split("; ");
+    const cookies =
+        document.cookie.split("; ");
 
     for (const cookie of cookies) {
 
-        const parts = cookie.split("=");
+        const parts =
+            cookie.split("=");
 
-        const key = parts.shift();
-        const value = parts.join("=");
+        const key =
+            parts.shift();
+
+        const value =
+            parts.join("=");
 
         if (key === name) {
+
             return decodeURIComponent(value);
+
         }
+
     }
 
     return null;
+
 }
 
 
 function setCookie(name, value, days) {
 
-    const date = new Date();
+    const date =
+        new Date();
 
     date.setTime(
         date.getTime() +
-        (days * 24 * 60 * 60 * 1000)
+        days * 24 * 60 * 60 * 1000
     );
 
     document.cookie =
         `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/; SameSite=Lax`;
+
 }
 
 
@@ -45,206 +126,430 @@ function deleteCookie(name) {
 
 
 /* =========================================================
-   ACCESSO
+   ELEMENTI HTML
 ========================================================= */
 
-/*
-    La prima pagina NON controlla la password.
+const loginScreen =
+    document.getElementById("loginScreen");
 
-    La prima pagina salva semplicemente quello
-    che l'utente ha scritto nel campo password.
-*/
+const app =
+    document.getElementById("app");
 
-const passwordInserita =
-    sessionStorage.getItem("passwordInserita");
+const nicknameInput =
+    document.getElementById("nicknameInput");
+
+const loginButton =
+    document.getElementById("loginButton");
+
+const loginError =
+    document.getElementById("loginError");
 
 
-/*
-    Se non è arrivata nessuna password,
-    non si può accedere.
-*/
+const nicknameDisplay =
+    document.getElementById("nicknameDisplay");
 
-if (!passwordInserita) {
+const scoreDisplay =
+    document.getElementById("scoreDisplay");
 
-    window.location.href = "index.html";
+const levelDisplay =
+    document.getElementById("levelDisplay");
 
-    throw new Error(
-        "Password non ricevuta."
-    );
-}
+const addButton =
+    document.getElementById("addButton");
+
+const cameraInput =
+    document.getElementById("cameraInput");
+
+const statusMessage =
+    document.getElementById("statusMessage");
+
+const rankingContainer =
+    document.getElementById("rankingContainer");
+
+const rankingMonth =
+    document.getElementById("rankingMonth");
+
+const gallery =
+    document.getElementById("gallery");
+
+const photoModal =
+    document.getElementById("photoModal");
+
+const previewImage =
+    document.getElementById("previewImage");
+
+const verificationResult =
+    document.getElementById("verificationResult");
+
+const closeModal =
+    document.getElementById("closeModal");
+
+const logoutButton =
+    document.getElementById("logoutButton");
 
 
 /* =========================================================
-   NICKNAME
+   UTENTE CORRENTE
 ========================================================= */
 
 let currentNickname =
     getCookie("nickname");
 
 
-/*
-    Se abbiamo già un nickname salvato,
-    lo usiamo direttamente.
-
-    Altrimenti lo chiediamo.
-*/
-
-if (!currentNickname) {
-
-    currentNickname =
-        prompt("Inserisci il tuo nickname");
-
-}
-
-
-/* =========================================================
-   CONTROLLO ACCOUNT
-========================================================= */
-
-if (
-    !currentNickname ||
-    !ACCOUNTS[currentNickname] ||
-    ACCOUNTS[currentNickname] !== passwordInserita
-) {
-
-    alert(
-        "Nickname o password non corretti."
-    );
-
-    sessionStorage.removeItem(
-        "passwordInserita"
-    );
-
-    window.location.href =
-        "index.html";
-
-    throw new Error(
-        "Utente non autenticato."
-    );
-}
-
-
-/*
-    Account corretto.
-    Salviamo il nickname.
-*/
-
-setCookie(
-    "nickname",
-    currentNickname,
-    365
-);
-
-
-/* =========================================================
-   ELEMENTI
-========================================================= */
-
-const nicknameDisplay =
-    document.getElementById(
-        "nicknameDisplay"
-    );
-
-const scoreDisplay =
-    document.getElementById(
-        "scoreDisplay"
-    );
-
-const levelDisplay =
-    document.getElementById(
-        "levelDisplay"
-    );
-
-const addButton =
-    document.getElementById(
-        "addButton"
-    );
-
-const cameraInput =
-    document.getElementById(
-        "cameraInput"
-    );
-
-const statusMessage =
-    document.getElementById(
-        "statusMessage"
-    );
-
-const rankingContainer =
-    document.getElementById(
-        "rankingContainer"
-    );
-
-const rankingMonth =
-    document.getElementById(
-        "rankingMonth"
-    );
-
-const gallery =
-    document.getElementById(
-        "gallery"
-    );
-
-const photoModal =
-    document.getElementById(
-        "photoModal"
-    );
-
-const previewImage =
-    document.getElementById(
-        "previewImage"
-    );
-
-const verificationResult =
-    document.getElementById(
-        "verificationResult"
-    );
-
-const closeModal =
-    document.getElementById(
-        "closeModal"
-    );
-
-const logoutButton =
-    document.getElementById(
-        "logoutButton"
-    );
-
-
 /* =========================================================
    DATABASE LOCALE
 ========================================================= */
 
+/*
+    ATTENZIONE:
+
+    Questo NON è ancora un vero database.
+
+    Per ora utilizziamo localStorage.
+
+    In futuro potremo sostituire queste funzioni
+    con Firebase, Supabase, MySQL tramite API,
+    ecc. senza dover riscrivere tutta l'app.
+*/
+
 let users =
     JSON.parse(
-        localStorage.getItem(
-            "usersData"
-        ) || "{}"
+        localStorage.getItem("usersData") || "{}"
     );
 
 
-/*
-    Creiamo i dati di tutti gli account.
-*/
+/* =========================================================
+   CREAZIONE ACCOUNT LOCALI
+========================================================= */
 
-Object.keys(ACCOUNTS).forEach(
-    nickname => {
+function initializeAccounts() {
 
-        if (!users[nickname]) {
+    Object.keys(ACCOUNTS).forEach(
+        nickname => {
 
-            users[nickname] = {
-                score: 0,
-                month: getCurrentMonth(),
-                photos: []
-            };
+            if (!users[nickname]) {
+
+                users[nickname] = {
+
+                    score: 0,
+
+                    month:
+                        getCurrentMonth(),
+
+                    photos: []
+
+                };
+
+            }
+
+        }
+    );
+
+
+    saveUsers();
+
+}
+
+
+/* =========================================================
+   SALVATAGGIO
+========================================================= */
+
+function saveUsers() {
+
+    localStorage.setItem(
+        "usersData",
+        JSON.stringify(users)
+    );
+
+}
+
+
+/* =========================================================
+   ACCESSO
+========================================================= */
+
+function login() {
+
+    const nickname =
+        nicknameInput.value.trim();
+
+
+    /*
+        Pulizia errore precedente.
+    */
+
+    loginError.textContent = "";
+
+
+    /*
+        Controllo nickname vuoto.
+    */
+
+    if (!nickname) {
+
+        loginError.textContent =
+            "Inserisci un nickname.";
+
+        nicknameInput.focus();
+
+        return;
+
+    }
+
+
+    /*
+        Controllo che l'account esista.
+    */
+
+    if (!ACCOUNTS[nickname]) {
+
+        loginError.textContent =
+            "Nickname non trovato.";
+
+        nicknameInput.focus();
+
+        return;
+
+    }
+
+
+    /*
+        Password ricevuta da index.html.
+    */
+
+    const passwordInserita =
+        sessionStorage.getItem(
+            "passwordInserita"
+        );
+
+
+    /*
+        Se non esiste la password,
+        l'utente deve tornare al login.
+    */
+
+    if (!passwordInserita) {
+
+        window.location.href =
+            "index.html";
+
+        return;
+
+    }
+
+
+    /*
+        Controllo password.
+    */
+
+    if (
+        ACCOUNTS[nickname] !==
+        passwordInserita
+    ) {
+
+        loginError.textContent =
+            "Nickname o password non corretti.";
+
+        nicknameInput.focus();
+
+        return;
+
+    }
+
+
+    /*
+        LOGIN CORRETTO
+    */
+
+    currentNickname =
+        nickname;
+
+
+    setCookie(
+        "nickname",
+        currentNickname,
+        365
+    );
+
+
+    /*
+        Nascondiamo login.
+    */
+
+    if (loginScreen) {
+
+        loginScreen.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    /*
+        Mostriamo app.
+    */
+
+    if (app) {
+
+        app.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    /*
+        Aggiorniamo tutto.
+    */
+
+    checkMonthlyReset();
+
+    updateHome();
+
+    updateRanking();
+
+    updateGallery();
+
+}
+
+
+/* =========================================================
+   EVENTO LOGIN
+========================================================= */
+
+if (loginButton) {
+
+    loginButton.addEventListener(
+        "click",
+        login
+    );
+
+}
+
+
+if (nicknameInput) {
+
+    nicknameInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+
+                login();
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CONTROLLO ACCESSO ALL'AVVIO
+========================================================= */
+
+function initializeApplication() {
+
+    initializeAccounts();
+
+
+    /*
+        Controlliamo se arriviamo da index.html
+        con una password valida.
+    */
+
+    const passwordInserita =
+        sessionStorage.getItem(
+            "passwordInserita"
+        );
+
+
+    /*
+        Se non abbiamo password,
+        torniamo al login principale.
+    */
+
+    if (!passwordInserita) {
+
+        window.location.href =
+            "index.html";
+
+        return;
+
+    }
+
+
+    /*
+        Se esiste un nickname salvato,
+        proviamo a effettuare automaticamente
+        l'accesso.
+    */
+
+    if (currentNickname) {
+
+        if (
+            ACCOUNTS[currentNickname] &&
+            ACCOUNTS[currentNickname] ===
+            passwordInserita
+        ) {
+
+            if (loginScreen) {
+
+                loginScreen.classList.add(
+                    "hidden"
+                );
+
+            }
+
+            if (app) {
+
+                app.classList.remove(
+                    "hidden"
+                );
+
+            }
+
+            checkMonthlyReset();
+
+            updateHome();
+
+            updateRanking();
+
+            updateGallery();
+
+            return;
 
         }
 
     }
-);
 
 
-saveUsers();
+    /*
+        Nessun nickname valido.
+
+        Mostriamo la schermata nickname.
+    */
+
+    if (loginScreen) {
+
+        loginScreen.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    if (app) {
+
+        app.classList.add(
+            "hidden"
+        );
+
+    }
+
+}
 
 
 /* =========================================================
@@ -284,14 +589,20 @@ function checkMonthlyReset() {
                 users[nickname];
 
 
+            if (!user) {
+                return;
+            }
+
+
             if (
-                user.month !== currentMonth
+                user.month !==
+                currentMonth
             ) {
 
                 /*
-                    Azzera il punteggio.
+                    Il punteggio viene azzerato.
 
-                    Le fotografie rimangono.
+                    Le fotografie NON vengono cancellate.
                 */
 
                 user.score = 0;
@@ -316,22 +627,42 @@ function checkMonthlyReset() {
 
 function updateHome() {
 
+    if (
+        !currentNickname ||
+        !users[currentNickname]
+    ) {
+
+        return;
+
+    }
+
+
     const user =
         users[currentNickname];
 
 
-    nicknameDisplay.textContent =
-        currentNickname;
+    if (nicknameDisplay) {
+
+        nicknameDisplay.textContent =
+            currentNickname;
+
+    }
 
 
-    scoreDisplay.textContent =
-        user.score;
+    if (scoreDisplay) {
+
+        scoreDisplay.textContent =
+            user.score;
+
+    }
 
 
-    levelDisplay.textContent =
-        getLevel(
-            user.score
-        );
+    if (levelDisplay) {
+
+        levelDisplay.textContent =
+            getLevel(user.score);
+
+    }
 
 }
 
@@ -372,20 +703,24 @@ function getLevel(score) {
    FOTOCAMERA
 ========================================================= */
 
-addButton.addEventListener(
-    "click",
-    () => {
+if (addButton && cameraInput) {
 
-        cameraInput.click();
+    addButton.addEventListener(
+        "click",
+        () => {
 
-    }
-);
+            cameraInput.click();
+
+        }
+    );
 
 
-cameraInput.addEventListener(
-    "change",
-    handlePhoto
-);
+    cameraInput.addEventListener(
+        "change",
+        handlePhoto
+    );
+
+}
 
 
 async function handlePhoto(event) {
@@ -395,54 +730,113 @@ async function handlePhoto(event) {
 
 
     if (!file) {
+
         return;
-    }
-
-
-    statusMessage.textContent =
-        "Controllo della fotografia...";
-
-
-    const imageData =
-        await fileToDataURL(file);
-
-
-    previewImage.src =
-        imageData;
-
-
-    photoModal.classList.remove(
-        "hidden"
-    );
-
-
-    const result =
-        await verificaFoto(file);
-
-
-    if (result.trovato) {
-
-        addPoint(imageData);
-
-    }
-    else {
-
-        verificationResult.innerHTML = `
-
-            <div class="verification-fail">
-                ✕ Oggetto non riconosciuto
-            </div>
-
-            <p>
-                Nessun punto assegnato.
-            </p>
-
-        `;
 
     }
 
 
-    statusMessage.textContent = "";
+    if (!currentNickname) {
+
+        return;
+
+    }
+
+
+    if (statusMessage) {
+
+        statusMessage.textContent =
+            "Controllo della fotografia...";
+
+    }
+
+
+    try {
+
+        const imageData =
+            await fileToDataURL(file);
+
+
+        if (previewImage) {
+
+            previewImage.src =
+                imageData;
+
+        }
+
+
+        if (photoModal) {
+
+            photoModal.classList.remove(
+                "hidden"
+            );
+
+        }
+
+
+        const result =
+            await verificaFoto(file);
+
+
+        if (result.trovato) {
+
+            addPoint(imageData);
+
+        }
+        else {
+
+            if (verificationResult) {
+
+                verificationResult.innerHTML = `
+
+                    <div class="verification-fail">
+                        ✕ Oggetto non riconosciuto
+                    </div>
+
+                    <p>
+                        Nessun punto assegnato.
+                    </p>
+
+                `;
+
+            }
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            "Errore durante la verifica:",
+            error
+        );
+
+
+        if (verificationResult) {
+
+            verificationResult.innerHTML = `
+
+                <div class="verification-fail">
+                    ✕ Errore durante il controllo
+                </div>
+
+                <p>
+                    Riprova.
+                </p>
+
+            `;
+
+        }
+
+    }
+
+
+    if (statusMessage) {
+
+        statusMessage.textContent = "";
+
+    }
+
 
     cameraInput.value = "";
 
@@ -463,9 +857,13 @@ function fileToDataURL(file) {
 
 
             reader.onload =
-                () => resolve(
-                    reader.result
-                );
+                () => {
+
+                    resolve(
+                        reader.result
+                    );
+
+                };
 
 
             reader.onerror =
@@ -499,18 +897,28 @@ async function verificaFoto(file) {
 
 
     /*
-        ATTENZIONE:
+        PER ORA non c'è ancora l'AI.
 
-        Qui non c'è ancora una vera AI.
+        Questa funzione è stata lasciata separata
+        proprio per poter collegare in futuro
+        il sistema di riconoscimento immagini.
 
-        Questa funzione deve essere collegata
-        successivamente al sistema di riconoscimento
-        immagini.
+        Esempio futuro:
+
+        const response = await fetch("/api/verifica-foto", {
+            method: "POST",
+            body: ...
+        });
+
     */
 
+
     return {
+
         trovato: false,
+
         affidabilita: 0
+
     };
 
 }
@@ -521,6 +929,16 @@ async function verificaFoto(file) {
 ========================================================= */
 
 function addPoint(imageData) {
+
+    if (
+        !currentNickname ||
+        !users[currentNickname]
+    ) {
+
+        return;
+
+    }
+
 
     const user =
         users[currentNickname];
@@ -535,9 +953,11 @@ function addPoint(imageData) {
 
     user.photos.push({
 
-        image: imageData,
+        image:
+            imageData,
 
-        points: points,
+        points:
+            points,
 
         date:
             new Date().toISOString(),
@@ -558,17 +978,21 @@ function addPoint(imageData) {
     updateGallery();
 
 
-    verificationResult.innerHTML = `
+    if (verificationResult) {
 
-        <div class="verification-success">
-            ✓ Oggetto riconosciuto
-        </div>
+        verificationResult.innerHTML = `
 
-        <p>
-            +${points} punto
-        </p>
+            <div class="verification-success">
+                ✓ Oggetto riconosciuto
+            </div>
 
-    `;
+            <p>
+                +${points} punto
+            </p>
+
+        `;
+
+    }
 
 }
 
@@ -579,27 +1003,40 @@ function addPoint(imageData) {
 
 function updateRanking() {
 
+    if (!rankingContainer) {
+
+        return;
+
+    }
+
+
     const currentMonth =
         getCurrentMonth();
 
 
-    rankingMonth.textContent =
-        "Classifica " +
-        formatMonth(
-            currentMonth
-        );
+    if (rankingMonth) {
+
+        rankingMonth.textContent =
+            "Classifica " +
+            formatMonth(
+                currentMonth
+            );
+
+    }
 
 
     const ranking =
         Object.keys(users)
-            .map(nickname => ({
+            .map(
+                nickname => ({
 
-                nickname,
+                    nickname,
 
-                score:
-                    users[nickname].score
+                    score:
+                        users[nickname].score
 
-            }))
+                })
+            )
             .sort(
                 (a, b) =>
                     b.score - a.score
@@ -619,33 +1056,39 @@ function updateRanking() {
 
 
             const usersInLevel =
-                ranking.filter(user => {
+                ranking.filter(
+                    user => {
 
-                    if (!nextLevel) {
+                        if (!nextLevel) {
+
+                            return (
+                                user.score >=
+                                level.minimo
+                            );
+
+                        }
+
 
                         return (
+
                             user.score >=
-                            level.minimo
+                            level.minimo &&
+
+                            user.score <
+                            nextLevel.minimo
+
                         );
 
                     }
-
-
-                    return (
-                        user.score >=
-                        level.minimo &&
-
-                        user.score <
-                        nextLevel.minimo
-                    );
-
-                });
+                );
 
 
             if (
                 usersInLevel.length === 0
             ) {
+
                 return;
+
             }
 
 
@@ -753,7 +1196,24 @@ function updateRanking() {
 
 function updateGallery() {
 
+    if (!gallery) {
+
+        return;
+
+    }
+
+
     gallery.innerHTML = "";
+
+
+    if (
+        !currentNickname ||
+        !users[currentNickname]
+    ) {
+
+        return;
+
+    }
 
 
     const photos =
@@ -765,12 +1225,15 @@ function updateGallery() {
     ) {
 
         gallery.innerHTML = `
+
             <p class="empty-gallery">
                 Non hai ancora nessun reperto.
             </p>
+
         `;
 
         return;
+
     }
 
 
@@ -778,50 +1241,52 @@ function updateGallery() {
         [...photos].reverse();
 
 
-    reversed.forEach(photo => {
+    reversed.forEach(
+        photo => {
 
-        const item =
-            document.createElement(
-                "div"
-            );
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        item.className =
-            "gallery-item";
-
-
-        const image =
-            document.createElement(
-                "img"
-            );
-
-        image.src =
-            photo.image;
-
-        image.alt =
-            "Reperto";
+            item.className =
+                "gallery-item";
 
 
-        const info =
-            document.createElement(
-                "div"
-            );
+            const image =
+                document.createElement(
+                    "img"
+                );
 
-        info.className =
-            "gallery-info";
+            image.src =
+                photo.image;
 
-
-        info.innerHTML =
-            `+${photo.points} punto • ${escapeHTML(photo.object)}`;
-
-
-        item.appendChild(image);
-
-        item.appendChild(info);
+            image.alt =
+                "Reperto";
 
 
-        gallery.appendChild(item);
+            const info =
+                document.createElement(
+                    "div"
+                );
 
-    });
+            info.className =
+                "gallery-info";
+
+
+            info.innerHTML =
+                `+${photo.points} punto • ${escapeHTML(photo.object)}`;
+
+
+            item.appendChild(image);
+
+            item.appendChild(info);
+
+
+            gallery.appendChild(item);
+
+        }
+    );
 
 }
 
@@ -831,113 +1296,114 @@ function updateGallery() {
 ========================================================= */
 
 document
-    .querySelectorAll(
-        ".nav-button"
-    )
-    .forEach(button => {
+    .querySelectorAll(".nav-button")
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                const pageID =
-                    button.dataset.page;
+                    const pageID =
+                        button.dataset.page;
 
 
-                document
-                    .querySelectorAll(
-                        ".page"
-                    )
-                    .forEach(page => {
+                    document
+                        .querySelectorAll(".page")
+                        .forEach(
+                            page => {
 
-                        page.classList.remove(
+                                page.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                    const selectedPage =
+                        document.getElementById(
+                            pageID
+                        );
+
+
+                    if (selectedPage) {
+
+                        selectedPage.classList.add(
                             "active"
                         );
 
-                    });
+                    }
 
 
-                document
-                    .getElementById(
-                        pageID
-                    )
-                    .classList.add(
+                    document
+                        .querySelectorAll(".nav-button")
+                        .forEach(
+                            btn => {
+
+                                btn.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                    button.classList.add(
                         "active"
                     );
 
+                }
+            );
 
-                document
-                    .querySelectorAll(
-                        ".nav-button"
-                    )
-                    .forEach(btn => {
-
-                        btn.classList.remove(
-                            "active"
-                        );
-
-                    });
-
-
-                button.classList.add(
-                    "active"
-                );
-
-            }
-        );
-
-    });
+        }
+    );
 
 
 /* =========================================================
    MODALE
 ========================================================= */
 
-closeModal.addEventListener(
-    "click",
-    () => {
+if (closeModal && photoModal) {
 
-        photoModal.classList.add(
-            "hidden"
-        );
+    closeModal.addEventListener(
+        "click",
+        () => {
 
-    }
-);
+            photoModal.classList.add(
+                "hidden"
+            );
+
+        }
+    );
+
+}
 
 
 /* =========================================================
    LOGOUT
 ========================================================= */
 
-logoutButton.addEventListener(
-    "click",
-    () => {
+if (logoutButton) {
 
-        deleteCookie(
-            "nickname"
-        );
+    logoutButton.addEventListener(
+        "click",
+        () => {
 
-        sessionStorage.removeItem(
-            "passwordInserita"
-        );
+            deleteCookie(
+                "nickname"
+            );
 
 
-        window.location.href =
-            "index.html";
-
-    }
-);
+            sessionStorage.removeItem(
+                "passwordInserita"
+            );
 
 
-/* =========================================================
-   SALVATAGGIO
-========================================================= */
+            window.location.href =
+                "index.html";
 
-function saveUsers() {
-
-    localStorage.setItem(
-        "usersData",
-        JSON.stringify(users)
+        }
     );
 
 }
@@ -952,31 +1418,49 @@ function formatMonth(value) {
     const [
         year,
         month
-    ] = value.split("-");
+    ] =
+        value.split("-");
 
 
     const names = [
+
         "Gennaio",
+
         "Febbraio",
+
         "Marzo",
+
         "Aprile",
+
         "Maggio",
+
         "Giugno",
+
         "Luglio",
+
         "Agosto",
+
         "Settembre",
+
         "Ottobre",
+
         "Novembre",
+
         "Dicembre"
+
     ];
 
 
     return (
+
         names[
             Number(month) - 1
         ] +
+
         " " +
+
         year
+
     );
 
 }
@@ -1007,10 +1491,5 @@ function escapeHTML(text) {
    AVVIO
 ========================================================= */
 
-checkMonthlyReset();
-
-updateHome();
-
-updateRanking();
-
-updateGallery();
+initializeApplication();
+```
