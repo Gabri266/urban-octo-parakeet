@@ -1,15 +1,80 @@
-```css
+/* =========================================================
+   PUNTI - STILE BOSCAIOLO / SEGHERIA
+   ========================================================= */
+
+:root {
+    --forest-dark: #10251a;
+    --forest: #1d3b27;
+    --forest-light: #315d3b;
+
+    --wood-dark: #3b2113;
+    --wood: #704426;
+    --wood-light: #a66a38;
+    --wood-pale: #d39a5d;
+
+    --paper: #f1dfbf;
+    --paper-dark: #d4b78c;
+
+    --gold: #e0a83b;
+    --red: #9e3527;
+
+    --text: #fff4df;
+    --text-dark: #302015;
+
+    --shadow: rgba(0, 0, 0, 0.45);
+}
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+html {
+    min-height: 100%;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    background: #f4f5f7;
-    color: #111;
     min-height: 100vh;
+    min-height: 100svh;
+
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    color: var(--text);
+
+    background:
+        radial-gradient(circle at 20% 10%, rgba(80, 120, 70, .25), transparent 25%),
+        radial-gradient(circle at 80% 90%, rgba(0, 0, 0, .25), transparent 30%),
+        linear-gradient(145deg, #10251a, #1c3925 50%, #10251a);
+
+    overflow-x: hidden;
+}
+
+/* Effetto leggero "foresta" */
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: .12;
+
+    background-image:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent 45px,
+            rgba(255,255,255,.08) 46px,
+            transparent 48px
+        );
+
+    z-index: -1;
 }
 
 button,
@@ -17,389 +82,836 @@ input {
     font: inherit;
 }
 
-button {
-    cursor: pointer;
-}
-
-
-/* =========================
-   GENERALE
-========================= */
+/* =========================================================
+   UTILITÀ
+   ========================================================= */
 
 .hidden {
     display: none !important;
 }
 
-.screen {
+.error {
+    color: #ffb4a8;
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+#loginScreen {
     min-height: 100vh;
+    min-height: 100svh;
+
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+
+    padding: 24px;
 }
 
-
-/* =========================
-   LOGIN
-========================= */
-
 .login-box {
-    width: 100%;
-    max-width: 380px;
-    background: white;
-    padding: 35px 25px;
-    border-radius: 22px;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    position: relative;
+
+    width: min(430px, 100%);
+
+    padding: 38px 28px 32px;
+
     text-align: center;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(50, 25, 12, .25),
+            transparent 20%,
+            rgba(50, 25, 12, .2) 50%,
+            transparent 80%
+        ),
+        linear-gradient(135deg, #8b572f, #63391f);
+
+    border: 4px solid #3b2113;
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.5),
+        inset 0 0 0 2px rgba(211,154,93,.35);
+
+    overflow: hidden;
+}
+
+/* decorazione */
+
+.login-box::before {
+    content: "🪓";
+
+    display: block;
+
+    font-size: 52px;
+
+    margin-bottom: 5px;
+
+    filter: drop-shadow(0 4px 3px rgba(0,0,0,.35));
+}
+
+.login-box::after {
+    content: "";
+
+    position: absolute;
+
+    left: 15px;
+    right: 15px;
+    bottom: 12px;
+
+    height: 3px;
+
+    background: rgba(40,20,10,.3);
+
+    border-radius: 50%;
 }
 
 .login-box h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
+    font-family: Georgia, serif;
+
+    font-size: clamp(36px, 9vw, 52px);
+
+    letter-spacing: 1px;
+
+    color: #fff0d0;
+
+    text-shadow:
+        0 3px 0 #3b2113,
+        0 5px 8px rgba(0,0,0,.4);
+
+    margin-bottom: 8px;
 }
 
 .login-box p {
-    color: #777;
-    margin-bottom: 25px;
+    color: #f4dcb9;
+    margin-bottom: 20px;
 }
 
-.login-box input {
+#nicknameInput {
     width: 100%;
-    border: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 12px;
+
+    padding: 15px 17px;
+
+    border: 3px solid #4a2918;
+    border-radius: 10px;
+
+    background: #f4e2c4;
+
+    color: #302015;
+
     outline: none;
-    margin-bottom: 12px;
+
+    transition: .2s;
 }
 
-.login-box input:focus {
-    border-color: #111;
+#nicknameInput::placeholder {
+    color: #806344;
 }
 
-.login-box button {
+#nicknameInput:focus {
+    border-color: var(--gold);
+
+    box-shadow:
+        0 0 0 4px rgba(224,168,59,.2);
+}
+
+/* =========================================================
+   BOTTONI
+   ========================================================= */
+
+#loginButton,
+#closeModal,
+.add-button {
+    border: 0;
+
+    cursor: pointer;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+
+    transition:
+        transform .12s ease,
+        filter .12s ease,
+        box-shadow .12s ease;
+}
+
+#loginButton:active,
+#closeModal:active,
+.add-button:active {
+    transform: translateY(3px);
+}
+
+#loginButton {
     width: 100%;
-    border: none;
+
+    margin-top: 15px;
+
     padding: 15px;
-    border-radius: 12px;
-    background: #111;
-    color: white;
-    font-weight: bold;
+
+    border-radius: 10px;
+
+    color: #fff4df;
+
+    background:
+        linear-gradient(#8c542e, #59321c);
+
+    border: 3px solid #3a2113;
+
+    box-shadow:
+        0 5px 0 #2b180d,
+        0 9px 15px rgba(0,0,0,.3);
 }
 
-.error {
-    color: #d33 !important;
-    margin-top: 12px;
-    margin-bottom: 0 !important;
+#loginButton:hover,
+.add-button:hover {
+    filter: brightness(1.12);
 }
 
+/* =========================================================
+   APP
+   ========================================================= */
 
-/* =========================
+#app {
+    min-height: 100vh;
+    min-height: 100svh;
+
+    padding-bottom: 100px;
+}
+
+/* =========================================================
    PAGINE
-========================= */
+   ========================================================= */
 
 .page {
-    min-height: 100vh;
-    padding: 30px 20px 120px;
     display: none;
+
+    width: min(900px, 100%);
+
+    margin: 0 auto;
+
+    padding: 25px 18px 110px;
+
+    animation: pageIn .25s ease;
 }
 
 .page.active {
     display: block;
 }
 
+@keyframes pageIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
 
-/* =========================
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page h1 {
+    position: relative;
+
+    text-align: center;
+
+    font-family: Georgia, serif;
+
+    font-size: clamp(32px, 8vw, 48px);
+
+    color: #ffe9c4;
+
+    text-shadow:
+        0 3px 0 #3b2113,
+        0 5px 10px rgba(0,0,0,.4);
+
+    margin-bottom: 25px;
+}
+
+.page h1::before {
+    content: "🪵 ";
+}
+
+/* =========================================================
    HOME
-========================= */
+   ========================================================= */
 
 .top {
-    margin-top: 10px;
-    font-size: 20px;
+    width: fit-content;
+    max-width: 100%;
+
+    margin: 0 auto 20px;
+
+    padding: 10px 18px;
+
+    background: linear-gradient(#8b572f, #5d351e);
+
+    border: 3px solid #3b2113;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 5px 0 #2a170c,
+        0 8px 15px rgba(0,0,0,.3);
 }
 
 .top span {
-    color: #777;
+    color: #e5c49b;
 }
 
 .top strong {
-    display: block;
-    font-size: 28px;
-    margin-top: 5px;
+    color: #fff0d0;
 }
 
+/* =========================================================
+   PUNTEGGIO - EFFETTO SEZIONE DEL TRONCO
+   ========================================================= */
+
 .score-container {
+    position: relative;
+
+    width: min(380px, 82vw);
+    aspect-ratio: 1;
+
+    margin: 25px auto 35px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
     text-align: center;
-    margin-top: 90px;
+
+    border-radius: 50%;
+
+    background:
+        repeating-radial-gradient(
+            circle,
+            #b9783e 0,
+            #b9783e 8px,
+            #8e542d 9px,
+            #8e542d 12px,
+            #c98549 13px,
+            #c98549 20px
+        );
+
+    border: 12px solid #4a2918;
+
+    box-shadow:
+        0 15px 30px rgba(0,0,0,.45),
+        inset 0 0 0 5px #d49a5c;
+
+    overflow: hidden;
+}
+
+/* "crepe" del tronco */
+
+.score-container::before {
+    content: "";
+
+    position: absolute;
+
+    width: 70%;
+    height: 2px;
+
+    background: rgba(50,25,10,.25);
+
+    transform: rotate(25deg);
+}
+
+.score-container::after {
+    content: "";
+
+    position: absolute;
+
+    width: 60%;
+    height: 2px;
+
+    background: rgba(50,25,10,.2);
+
+    transform: rotate(-42deg);
 }
 
 .score-label {
-    color: #777;
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 1px;
+    position: relative;
+    z-index: 2;
+
+    font-size: 13px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+
+    color: #4a2918;
+
+    margin-bottom: 5px;
 }
 
 .score {
-    font-size: 100px;
-    line-height: 1;
-    font-weight: 800;
-    margin: 15px 0;
+    position: relative;
+    z-index: 2;
+
+    font-family: Georgia, serif;
+
+    font-size: clamp(80px, 22vw, 130px);
+
+    line-height: .9;
+
+    font-weight: 900;
+
+    color: #fff0c9;
+
+    text-shadow:
+        0 5px 0 #5a321c,
+        0 8px 12px rgba(0,0,0,.35);
 }
 
 .level {
-    display: inline-block;
-    padding: 8px 15px;
+    position: relative;
+    z-index: 2;
+
+    margin-top: 12px;
+
+    padding: 6px 15px;
+
     border-radius: 20px;
-    background: #111;
-    color: white;
+
+    background: #3d2415;
+
+    color: #ffd98d;
+
+    font-weight: 900;
+
     font-size: 13px;
-    font-weight: bold;
+
+    letter-spacing: 1px;
 }
+
+/* =========================================================
+   PULSANTE AGGIUNGI TRONCO
+   ========================================================= */
 
 .add-button {
     display: flex;
+
     align-items: center;
     justify-content: center;
-    gap: 8px;
 
-    width: min(90%, 350px);
-    margin: 65px auto 0;
+    gap: 12px;
 
-    padding: 18px;
-    border: none;
-    border-radius: 16px;
+    width: min(420px, 90%);
 
-    background: #111;
-    color: white;
+    margin: 0 auto;
 
-    font-size: 18px;
-    font-weight: bold;
+    padding: 20px;
 
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 15px;
+
+    color: #fff3dc;
+
+    background:
+        linear-gradient(
+            90deg,
+            #59321c,
+            #8b572f 30%,
+            #704426 70%,
+            #4b2918
+        );
+
+    border: 4px solid #321b0e;
+
+    box-shadow:
+        0 7px 0 #241208,
+        0 14px 25px rgba(0,0,0,.4);
+
+    font-size: 20px;
 }
 
 .add-button span {
-    font-size: 25px;
-}
-
-.add-button:active {
-    transform: scale(0.97);
+    font-size: 32px;
+    line-height: 1;
 }
 
 .status {
+    min-height: 35px;
+
+    margin: 20px auto;
+
     text-align: center;
-    margin-top: 20px;
-    color: #666;
+
+    font-weight: 700;
 }
 
-
-/* =========================
+/* =========================================================
    CLASSIFICA
-========================= */
+   ========================================================= */
 
-.page h1 {
-    font-size: 32px;
-    margin-bottom: 25px;
-}
+#rankingContainer {
+    display: flex;
 
-.ranking-level {
-    margin-bottom: 25px;
-}
+    flex-direction: column;
 
-.ranking-level h2 {
-    font-size: 17px;
-    margin-bottom: 10px;
-    color: #666;
+    gap: 12px;
 }
 
 .ranking-item {
     display: flex;
+
     align-items: center;
-    justify-content: space-between;
 
-    background: white;
-    padding: 15px;
+    gap: 12px;
 
-    border-radius: 14px;
-    margin-bottom: 8px;
+    padding: 14px 16px;
+
+    color: #3b2113;
+
+    background:
+        linear-gradient(
+            90deg,
+            #c4874e,
+            #a96836,
+            #c4874e
+        );
+
+    border: 3px solid #4a2918;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 5px 0 #321b0e,
+        0 8px 12px rgba(0,0,0,.25);
 }
 
-.ranking-position {
-    width: 35px;
-    font-weight: bold;
+.ranking-item:first-child {
+    border-color: #d9a62f;
+
+    box-shadow:
+        0 5px 0 #7a5210,
+        0 0 20px rgba(224,168,59,.25);
 }
 
-.ranking-name {
-    flex: 1;
-    font-weight: bold;
+.ranking-item strong {
+    color: #fff1d1;
 }
 
-.ranking-score {
-    font-weight: bold;
+.ranking-item .rank {
+    min-width: 38px;
+
+    font-size: 23px;
+
+    font-weight: 900;
+
+    color: #3b2113;
 }
 
+.ranking-item .points {
+    margin-left: auto;
 
-/* =========================
-   REPERTI
-========================= */
+    padding: 5px 10px;
+
+    border-radius: 8px;
+
+    background: #3b2113;
+
+    color: #ffd98d;
+
+    font-weight: 900;
+}
+
+/* =========================================================
+   GALLERIA
+   ========================================================= */
 
 .private-text {
-    color: #777;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
+
+    padding: 12px;
+
+    text-align: center;
+
+    border-radius: 10px;
+
+    color: #f0d7ae;
+
+    background: rgba(0,0,0,.2);
 }
 
 .gallery {
     display: grid;
+
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+
+    gap: 12px;
 }
 
 .gallery-item {
-    background: white;
-    border-radius: 15px;
-    overflow: hidden;
+    padding: 7px;
+
+    background: #6e4226;
+
+    border: 3px solid #3b2113;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 6px 12px rgba(0,0,0,.3);
 }
 
 .gallery-item img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
     display: block;
+
+    width: 100%;
+
+    aspect-ratio: 1;
+
+    object-fit: cover;
+
+    border-radius: 5px;
 }
 
-.gallery-info {
-    padding: 10px;
-    font-size: 13px;
-    color: #555;
-}
-
-
-/* =========================
+/* =========================================================
    NAVIGAZIONE
-========================= */
+   ========================================================= */
 
 .bottom-nav {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
 
-    height: 75px;
+    left: 50%;
+    bottom: 12px;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-
-    background: white;
-    border-top: 1px solid #ddd;
+    transform: translateX(-50%);
 
     z-index: 100;
+
+    width: min(600px, calc(100% - 20px));
+
+    display: flex;
+
+    justify-content: space-around;
+
+    padding: 8px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #3c2113,
+            #6a3e23,
+            #3c2113
+        );
+
+    border: 3px solid #241208;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.5);
 }
 
 .nav-button {
-    border: none;
-    background: transparent;
+    flex: 1;
 
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+    justify-content: center;
 
-    gap: 4px;
+    gap: 2px;
 
-    color: #888;
+    padding: 7px 4px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background: transparent;
+
+    color: #cba77c;
+
+    cursor: pointer;
+
+    transition: .15s;
 }
 
 .nav-button span {
-    font-size: 24px;
+    font-size: 25px;
 }
 
 .nav-button small {
+    font-weight: 800;
     font-size: 11px;
 }
 
 .nav-button.active {
-    color: #111;
-    font-weight: bold;
+    color: #fff0ce;
+
+    background:
+        linear-gradient(#89542e, #5c351e);
+
+    box-shadow:
+        inset 0 0 0 2px rgba(255,215,150,.15);
 }
 
+.nav-button:active {
+    transform: scale(.95);
+}
 
-/* =========================
-   MODALE
-========================= */
+/* =========================================================
+   MODALE FOTO
+   ========================================================= */
 
 .modal {
     position: fixed;
+
     inset: 0;
 
-    background: rgba(0, 0, 0, 0.65);
+    z-index: 500;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    padding: 20px;
+    padding: 18px;
 
-    z-index: 500;
+    background: rgba(5,15,9,.82);
+
+    backdrop-filter: blur(5px);
 }
 
 .modal-box {
-    background: white;
-    width: 100%;
-    max-width: 420px;
+    width: min(500px, 100%);
 
-    border-radius: 20px;
-    padding: 20px;
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 22px;
 
     text-align: center;
+
+    background:
+        linear-gradient(135deg, #8c592f, #5e351f);
+
+    border: 4px solid #321b0e;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.6);
 }
 
 .modal-box h2 {
+    font-family: Georgia, serif;
+
+    font-size: 28px;
+
+    margin-bottom: 18px;
+
+    color: #fff0d0;
+}
+
+#previewImage {
+    display: block;
+
+    width: 100%;
+    max-height: 55vh;
+
+    object-fit: contain;
+
+    border-radius: 10px;
+
+    border: 4px solid #3b2113;
+
+    background: #24150c;
+
     margin-bottom: 15px;
 }
 
-.modal-box img {
-    width: 100%;
-    max-height: 400px;
-    object-fit: contain;
-
-    border-radius: 12px;
-    background: #eee;
-}
-
 #verificationResult {
-    margin: 20px 0;
-    font-weight: bold;
+    margin: 15px 0;
+
+    font-weight: 800;
 }
 
 #closeModal {
     width: 100%;
-    padding: 14px;
 
-    border: none;
-    border-radius: 12px;
+    padding: 13px;
 
-    background: #111;
-    color: white;
+    color: #fff2dc;
+
+    background: #3b2113;
+
+    border: 3px solid #241208;
+
+    border-radius: 10px;
 }
 
+/* =========================================================
+   MESSAGGI
+   ========================================================= */
 
-/* =========================
-   DESKTOP
-========================= */
+.status.success {
+    color: #b8e7a7;
+}
+
+.status.error {
+    color: #ffb0a3;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
 @media (min-width: 700px) {
 
+    .gallery {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     .page {
-        max-width: 650px;
-        margin: auto;
+        padding-left: 25px;
+        padding-right: 25px;
+    }
+}
+
+@media (max-width: 420px) {
+
+    .login-box {
+        padding: 30px 20px 28px;
+    }
+
+    .score-container {
+        width: 76vw;
     }
 
     .bottom-nav {
-        max-width: 650px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 20px 20px 0 0;
+        bottom: 8px;
     }
 
+    .nav-button small {
+        font-size: 10px;
+    }
 }
-```
+
+/* =========================================================
+   ACCESSIBILITÀ / TOUCH
+   ========================================================= */
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 3px;
+}
