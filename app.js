@@ -1,32 +1,5 @@
-```javascript
 /* =========================================================
-   CONFIGURAZIONE ACCOUNT
-========================================================= */
-
-/*
-    PER ORA gli account sono qui.
-
-    In futuro questa parte verrà sostituita
-    dal database.
-
-    Formato:
-
-    "nickname": "password"
-*/
-
-const ACCOUNTS = {
-
-    "Gabriele": "1234",
-
-    "Mario": "5678",
-
-    "Luca": "abcd"
-
-};
-
-
-/* =========================================================
-   CONFIGURAZIONE GIOCO
+   CONFIGURAZIONE
 ========================================================= */
 
 const GAME_CONFIG = {
@@ -37,35 +10,115 @@ const GAME_CONFIG = {
     },
 
     livelli: [
-
         {
             nome: "LIVELLO 1",
             minimo: 0
         },
-
         {
             nome: "LIVELLO 2",
             minimo: 50
         },
-
         {
             nome: "LIVELLO 3",
             minimo: 100
         },
-
         {
             nome: "LIVELLO 4",
-            minimo: 250
+            minimo: 200
         },
-
         {
             nome: "LIVELLO 5",
             minimo: 500
         }
+    ],
 
-    ]
+    /*
+        TRUE = modalità test.
+        In modalità test ogni fotografia viene considerata valida.
+
+        Quando collegheremo il vero sistema di riconoscimento
+        immagini, basterà mettere false.
+    */
+    modalitaTest: true
 
 };
+
+
+/* =========================================================
+   ELEMENTI HTML
+========================================================= */
+
+const loginScreen =
+    document.getElementById("loginScreen");
+
+const loginButton =
+    document.getElementById("loginButton");
+
+const nicknameInput =
+    document.getElementById("nicknameInput");
+
+const loginError =
+    document.getElementById("loginError");
+
+const app =
+    document.getElementById("app");
+
+const nicknameDisplay =
+    document.getElementById("nicknameDisplay");
+
+const scoreDisplay =
+    document.getElementById("scoreDisplay");
+
+const levelDisplay =
+    document.getElementById("levelDisplay");
+
+const addButton =
+    document.getElementById("addButton");
+
+const cameraInput =
+    document.getElementById("cameraInput");
+
+const statusMessage =
+    document.getElementById("statusMessage");
+
+const rankingContainer =
+    document.getElementById("rankingContainer");
+
+const gallery =
+    document.getElementById("gallery");
+
+const photoModal =
+    document.getElementById("photoModal");
+
+const previewImage =
+    document.getElementById("previewImage");
+
+const verificationResult =
+    document.getElementById("verificationResult");
+
+const closeModal =
+    document.getElementById("closeModal");
+
+
+/* =========================================================
+   CONTROLLO ELEMENTI
+========================================================= */
+
+if (!loginScreen) {
+    console.error("ERRORE: manca #loginScreen");
+}
+
+if (!loginButton) {
+    console.error("ERRORE: manca #loginButton");
+}
+
+if (!nicknameInput) {
+    console.error("ERRORE: manca #nicknameInput");
+}
+
+if (!app) {
+    console.error("ERRORE: manca #app");
+}
 
 
 /* =========================================================
@@ -89,15 +142,11 @@ function getCookie(name) {
             parts.join("=");
 
         if (key === name) {
-
             return decodeURIComponent(value);
-
         }
-
     }
 
     return null;
-
 }
 
 
@@ -108,12 +157,11 @@ function setCookie(name, value, days) {
 
     date.setTime(
         date.getTime() +
-        days * 24 * 60 * 60 * 1000
+        (days * 24 * 60 * 60 * 1000)
     );
 
     document.cookie =
         `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/; SameSite=Lax`;
-
 }
 
 
@@ -126,70 +174,7 @@ function deleteCookie(name) {
 
 
 /* =========================================================
-   ELEMENTI HTML
-========================================================= */
-
-const loginScreen =
-    document.getElementById("loginScreen");
-
-const app =
-    document.getElementById("app");
-
-const nicknameInput =
-    document.getElementById("nicknameInput");
-
-const loginButton =
-    document.getElementById("loginButton");
-
-const loginError =
-    document.getElementById("loginError");
-
-
-const nicknameDisplay =
-    document.getElementById("nicknameDisplay");
-
-const scoreDisplay =
-    document.getElementById("scoreDisplay");
-
-const levelDisplay =
-    document.getElementById("levelDisplay");
-
-const addButton =
-    document.getElementById("addButton");
-
-const cameraInput =
-    document.getElementById("cameraInput");
-
-const statusMessage =
-    document.getElementById("statusMessage");
-
-const rankingContainer =
-    document.getElementById("rankingContainer");
-
-const rankingMonth =
-    document.getElementById("rankingMonth");
-
-const gallery =
-    document.getElementById("gallery");
-
-const photoModal =
-    document.getElementById("photoModal");
-
-const previewImage =
-    document.getElementById("previewImage");
-
-const verificationResult =
-    document.getElementById("verificationResult");
-
-const closeModal =
-    document.getElementById("closeModal");
-
-const logoutButton =
-    document.getElementById("logoutButton");
-
-
-/* =========================================================
-   UTENTE CORRENTE
+   NICKNAME ATTUALE
 ========================================================= */
 
 let currentNickname =
@@ -200,360 +185,93 @@ let currentNickname =
    DATABASE LOCALE
 ========================================================= */
 
-/*
-    ATTENZIONE:
-
-    Questo NON è ancora un vero database.
-
-    Per ora utilizziamo localStorage.
-
-    In futuro potremo sostituire queste funzioni
-    con Firebase, Supabase, MySQL tramite API,
-    ecc. senza dover riscrivere tutta l'app.
-*/
-
-let users =
-    JSON.parse(
-        localStorage.getItem("usersData") || "{}"
-    );
+let users = loadUsers();
 
 
-/* =========================================================
-   CREAZIONE ACCOUNT LOCALI
-========================================================= */
+function loadUsers() {
 
-function initializeAccounts() {
+    try {
 
-    Object.keys(ACCOUNTS).forEach(
-        nickname => {
+        const saved =
+            localStorage.getItem("usersData");
 
-            if (!users[nickname]) {
-
-                users[nickname] = {
-
-                    score: 0,
-
-                    month:
-                        getCurrentMonth(),
-
-                    photos: []
-
-                };
-
-            }
-
+        if (!saved) {
+            return {};
         }
-    );
 
+        const parsed =
+            JSON.parse(saved);
 
-    saveUsers();
+        if (
+            typeof parsed !== "object" ||
+            parsed === null
+        ) {
+            return {};
+        }
+
+        return parsed;
+
+    } catch (error) {
+
+        console.error(
+            "Errore nel caricamento degli utenti:",
+            error
+        );
+
+        return {};
+    }
 
 }
 
-
-/* =========================================================
-   SALVATAGGIO
-========================================================= */
 
 function saveUsers() {
 
-    localStorage.setItem(
-        "usersData",
-        JSON.stringify(users)
-    );
+    try {
+
+        localStorage.setItem(
+            "usersData",
+            JSON.stringify(users)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Errore nel salvataggio:",
+            error
+        );
+
+    }
 
 }
 
 
 /* =========================================================
-   ACCESSO
+   CREAZIONE UTENTE
 ========================================================= */
 
-function login() {
+function createUser(nickname) {
 
-    const nickname =
-        nicknameInput.value.trim();
+    if (!users[nickname]) {
 
+        users[nickname] = {
 
-    /*
-        Pulizia errore precedente.
-    */
+            score: 0,
 
-    loginError.textContent = "";
+            month:
+                getCurrentMonth(),
 
+            photos: []
 
-    /*
-        Controllo nickname vuoto.
-    */
+        };
 
-    if (!nickname) {
-
-        loginError.textContent =
-            "Inserisci un nickname.";
-
-        nicknameInput.focus();
-
-        return;
-
-    }
-
-
-    /*
-        Controllo che l'account esista.
-    */
-
-    if (!ACCOUNTS[nickname]) {
-
-        loginError.textContent =
-            "Nickname non trovato.";
-
-        nicknameInput.focus();
-
-        return;
-
-    }
-
-
-    /*
-        Password ricevuta da index.html.
-    */
-
-    const passwordInserita =
-        sessionStorage.getItem(
-            "passwordInserita"
-        );
-
-
-    /*
-        Se non esiste la password,
-        l'utente deve tornare al login.
-    */
-
-    if (!passwordInserita) {
-
-        window.location.href =
-            "index.html";
-
-        return;
-
-    }
-
-
-    /*
-        Controllo password.
-    */
-
-    if (
-        ACCOUNTS[nickname] !==
-        passwordInserita
-    ) {
-
-        loginError.textContent =
-            "Nickname o password non corretti.";
-
-        nicknameInput.focus();
-
-        return;
-
-    }
-
-
-    /*
-        LOGIN CORRETTO
-    */
-
-    currentNickname =
-        nickname;
-
-
-    setCookie(
-        "nickname",
-        currentNickname,
-        365
-    );
-
-
-    /*
-        Nascondiamo login.
-    */
-
-    if (loginScreen) {
-
-        loginScreen.classList.add(
-            "hidden"
-        );
-
-    }
-
-
-    /*
-        Mostriamo app.
-    */
-
-    if (app) {
-
-        app.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    /*
-        Aggiorniamo tutto.
-    */
-
-    checkMonthlyReset();
-
-    updateHome();
-
-    updateRanking();
-
-    updateGallery();
-
-}
-
-
-/* =========================================================
-   EVENTO LOGIN
-========================================================= */
-
-if (loginButton) {
-
-    loginButton.addEventListener(
-        "click",
-        login
-    );
-
-}
-
-
-if (nicknameInput) {
-
-    nicknameInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (event.key === "Enter") {
-
-                login();
-
-            }
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   CONTROLLO ACCESSO ALL'AVVIO
-========================================================= */
-
-function initializeApplication() {
-
-    initializeAccounts();
-
-
-    /*
-        Controlliamo se arriviamo da index.html
-        con una password valida.
-    */
-
-    const passwordInserita =
-        sessionStorage.getItem(
-            "passwordInserita"
-        );
-
-
-    /*
-        Se non abbiamo password,
-        torniamo al login principale.
-    */
-
-    if (!passwordInserita) {
-
-        window.location.href =
-            "index.html";
-
-        return;
-
-    }
-
-
-    /*
-        Se esiste un nickname salvato,
-        proviamo a effettuare automaticamente
-        l'accesso.
-    */
-
-    if (currentNickname) {
-
-        if (
-            ACCOUNTS[currentNickname] &&
-            ACCOUNTS[currentNickname] ===
-            passwordInserita
-        ) {
-
-            if (loginScreen) {
-
-                loginScreen.classList.add(
-                    "hidden"
-                );
-
-            }
-
-            if (app) {
-
-                app.classList.remove(
-                    "hidden"
-                );
-
-            }
-
-            checkMonthlyReset();
-
-            updateHome();
-
-            updateRanking();
-
-            updateGallery();
-
-            return;
-
-        }
-
-    }
-
-
-    /*
-        Nessun nickname valido.
-
-        Mostriamo la schermata nickname.
-    */
-
-    if (loginScreen) {
-
-        loginScreen.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    if (app) {
-
-        app.classList.add(
-            "hidden"
-        );
-
+        saveUsers();
     }
 
 }
 
 
 /* =========================================================
-   MESE
+   MESE CORRENTE
 ========================================================= */
 
 function getCurrentMonth() {
@@ -581,6 +299,7 @@ function checkMonthlyReset() {
     const currentMonth =
         getCurrentMonth();
 
+    let changed = false;
 
     Object.keys(users).forEach(
         nickname => {
@@ -588,35 +307,212 @@ function checkMonthlyReset() {
             const user =
                 users[nickname];
 
-
             if (!user) {
                 return;
             }
 
+            if (!Array.isArray(user.photos)) {
+                user.photos = [];
+                changed = true;
+            }
 
             if (
-                user.month !==
-                currentMonth
+                typeof user.score !== "number"
             ) {
+                user.score = 0;
+                changed = true;
+            }
 
-                /*
-                    Il punteggio viene azzerato.
-
-                    Le fotografie NON vengono cancellate.
-                */
+            if (
+                user.month !== currentMonth
+            ) {
 
                 user.score = 0;
 
                 user.month =
                     currentMonth;
 
+                changed = true;
             }
 
         }
     );
 
+    if (changed) {
+        saveUsers();
+    }
 
-    saveUsers();
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+function login() {
+
+    if (!nicknameInput) {
+        return;
+    }
+
+    const nickname =
+        nicknameInput.value.trim();
+
+    /*
+        Controllo nickname vuoto
+    */
+
+    if (nickname === "") {
+
+        if (loginError) {
+
+            loginError.textContent =
+                "Inserisci un nickname.";
+
+        }
+
+        nicknameInput.focus();
+
+        return;
+    }
+
+    /*
+        Controllo lunghezza
+    */
+
+    if (nickname.length > 20) {
+
+        if (loginError) {
+
+            loginError.textContent =
+                "Il nickname è troppo lungo.";
+
+        }
+
+        nicknameInput.focus();
+
+        return;
+    }
+
+    /*
+        Salviamo nickname
+    */
+
+    currentNickname =
+        nickname;
+
+    setCookie(
+        "nickname",
+        currentNickname,
+        365
+    );
+
+    /*
+        Creiamo l'utente
+        se non esiste
+    */
+
+    createUser(
+        currentNickname
+    );
+
+    /*
+        Puliamo eventuale errore
+    */
+
+    if (loginError) {
+
+        loginError.textContent =
+            "";
+
+    }
+
+    /*
+        Nascondi login
+    */
+
+    if (loginScreen) {
+
+        loginScreen.classList.add(
+            "hidden"
+        );
+
+    }
+
+    /*
+        Mostra app
+    */
+
+    if (app) {
+
+        app.classList.remove(
+            "hidden"
+        );
+
+    }
+
+    /*
+        Avvio applicazione
+    */
+
+    initializeApplication();
+
+}
+
+
+/* =========================================================
+   ENTER DA TASTIERA
+========================================================= */
+
+if (loginButton) {
+
+    loginButton.addEventListener(
+        "click",
+        login
+    );
+
+}
+
+
+if (nicknameInput) {
+
+    nicknameInput.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (event.key === "Enter") {
+
+                login();
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   AVVIO APPLICAZIONE
+========================================================= */
+
+function initializeApplication() {
+
+    if (!currentNickname) {
+        return;
+    }
+
+    createUser(
+        currentNickname
+    );
+
+    checkMonthlyReset();
+
+    updateHome();
+
+    updateRanking();
+
+    updateGallery();
 
 }
 
@@ -627,19 +523,16 @@ function checkMonthlyReset() {
 
 function updateHome() {
 
-    if (
-        !currentNickname ||
-        !users[currentNickname]
-    ) {
-
+    if (!currentNickname) {
         return;
-
     }
-
 
     const user =
         users[currentNickname];
 
+    if (!user) {
+        return;
+    }
 
     if (nicknameDisplay) {
 
@@ -648,14 +541,12 @@ function updateHome() {
 
     }
 
-
     if (scoreDisplay) {
 
         scoreDisplay.textContent =
             user.score;
 
     }
-
 
     if (levelDisplay) {
 
@@ -676,7 +567,6 @@ function getLevel(score) {
     let selectedLevel =
         GAME_CONFIG.livelli[0];
 
-
     for (
         const level
         of GAME_CONFIG.livelli
@@ -693,27 +583,38 @@ function getLevel(score) {
 
     }
 
-
     return selectedLevel.nome;
 
 }
 
 
 /* =========================================================
-   FOTOCAMERA
+   AGGIUNGI FOTO
 ========================================================= */
 
-if (addButton && cameraInput) {
+if (addButton) {
 
     addButton.addEventListener(
         "click",
-        () => {
+        function () {
 
-            cameraInput.click();
+            if (cameraInput) {
+
+                cameraInput.click();
+
+            }
 
         }
     );
 
+}
+
+
+/* =========================================================
+   INPUT FOTO
+========================================================= */
+
+if (cameraInput) {
 
     cameraInput.addEventListener(
         "change",
@@ -723,25 +624,23 @@ if (addButton && cameraInput) {
 }
 
 
+/* =========================================================
+   GESTIONE FOTO
+========================================================= */
+
 async function handlePhoto(event) {
 
     const file =
         event.target.files[0];
 
-
     if (!file) {
-
         return;
-
     }
-
 
     if (!currentNickname) {
 
         return;
-
     }
-
 
     if (statusMessage) {
 
@@ -750,12 +649,14 @@ async function handlePhoto(event) {
 
     }
 
-
     try {
 
         const imageData =
             await fileToDataURL(file);
 
+        /*
+            Mostra anteprima
+        */
 
         if (previewImage) {
 
@@ -764,6 +665,12 @@ async function handlePhoto(event) {
 
         }
 
+        if (verificationResult) {
+
+            verificationResult.innerHTML =
+                "";
+
+        }
 
         if (photoModal) {
 
@@ -773,72 +680,66 @@ async function handlePhoto(event) {
 
         }
 
+        /*
+            Verifica fotografia
+        */
 
         const result =
             await verificaFoto(file);
 
+        /*
+            Se riconosciuta
+        */
 
         if (result.trovato) {
 
-            addPoint(imageData);
+            addPoint(
+                imageData
+            );
 
-        }
-        else {
+        } else {
 
-            if (verificationResult) {
-
-                verificationResult.innerHTML = `
-
-                    <div class="verification-fail">
-                        ✕ Oggetto non riconosciuto
-                    </div>
-
-                    <p>
-                        Nessun punto assegnato.
-                    </p>
-
-                `;
-
-            }
+            showVerificationFailed();
 
         }
 
-    }
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "Errore durante la verifica:",
+            "Errore durante la gestione della foto:",
             error
         );
-
 
         if (verificationResult) {
 
             verificationResult.innerHTML = `
-
                 <div class="verification-fail">
-                    ✕ Errore durante il controllo
+                    ✕ Errore durante la verifica
                 </div>
-
                 <p>
                     Riprova.
                 </p>
-
             `;
 
         }
 
+    } finally {
+
+        if (statusMessage) {
+
+            statusMessage.textContent =
+                "";
+
+        }
+
+        if (cameraInput) {
+
+            cameraInput.value =
+                "";
+
+        }
+
     }
-
-
-    if (statusMessage) {
-
-        statusMessage.textContent = "";
-
-    }
-
-
-    cameraInput.value = "";
 
 }
 
@@ -855,9 +756,8 @@ function fileToDataURL(file) {
             const reader =
                 new FileReader();
 
-
             reader.onload =
-                () => {
+                function () {
 
                     resolve(
                         reader.result
@@ -865,12 +765,20 @@ function fileToDataURL(file) {
 
                 };
 
-
             reader.onerror =
-                reject;
+                function () {
 
+                    reject(
+                        new Error(
+                            "Impossibile leggere l'immagine."
+                        )
+                    );
 
-            reader.readAsDataURL(file);
+                };
+
+            reader.readAsDataURL(
+                file
+            );
 
         }
     );
@@ -889,29 +797,47 @@ async function verificaFoto(file) {
         file.name
     );
 
-
     console.log(
-        "Oggetto da cercare:",
-        GAME_CONFIG.obiettivo
+        "Modalità test:",
+        GAME_CONFIG.modalitaTest
     );
 
-
     /*
-        PER ORA non c'è ancora l'AI.
+        MODALITÀ TEST
 
-        Questa funzione è stata lasciata separata
-        proprio per poter collegare in futuro
-        il sistema di riconoscimento immagini.
+        Per ora accettiamo qualsiasi immagine.
+        Questo permette di verificare che:
 
-        Esempio futuro:
+        FOTO →
+        MODALE →
+        PUNTI →
+        CLASSIFICA →
+        GALLERIA
 
-        const response = await fetch("/api/verifica-foto", {
-            method: "POST",
-            body: ...
-        });
+        funzionino.
 
+        Successivamente questa funzione verrà
+        sostituita con il vero riconoscimento
+        dell'immagine.
     */
 
+    if (
+        GAME_CONFIG.modalitaTest
+    ) {
+
+        return {
+
+            trovato: true,
+
+            affidabilita: 100
+
+        };
+
+    }
+
+    /*
+        Qui andrà il vero sistema AI.
+    */
 
     return {
 
@@ -925,31 +851,60 @@ async function verificaFoto(file) {
 
 
 /* =========================================================
-   AGGIUNTA PUNTO
+   FOTO NON RICONOSCIUTA
+========================================================= */
+
+function showVerificationFailed() {
+
+    if (!verificationResult) {
+        return;
+    }
+
+    verificationResult.innerHTML = `
+
+        <div class="verification-fail">
+            ✕ Oggetto non riconosciuto
+        </div>
+
+        <p>
+            Nessun punto assegnato.
+        </p>
+
+    `;
+
+}
+
+
+/* =========================================================
+   AGGIUNTA PUNTI
 ========================================================= */
 
 function addPoint(imageData) {
 
-    if (
-        !currentNickname ||
-        !users[currentNickname]
-    ) {
-
+    if (!currentNickname) {
         return;
-
     }
-
 
     const user =
         users[currentNickname];
 
+    if (!user) {
+        return;
+    }
 
     const points =
         GAME_CONFIG.obiettivo.punti;
 
+    /*
+        Aggiungiamo punti
+    */
 
-    user.score += points;
+    user.score +=
+        points;
 
+    /*
+        Salviamo fotografia
+    */
 
     user.photos.push({
 
@@ -967,9 +922,15 @@ function addPoint(imageData) {
 
     });
 
+    /*
+        Salvataggio
+    */
 
     saveUsers();
 
+    /*
+        Aggiornamento interfaccia
+    */
 
     updateHome();
 
@@ -977,6 +938,9 @@ function addPoint(imageData) {
 
     updateGallery();
 
+    /*
+        Risultato
+    */
 
     if (verificationResult) {
 
@@ -987,7 +951,7 @@ function addPoint(imageData) {
             </div>
 
             <p>
-                +${points} punto
+                +${points} punto${points === 1 ? "" : "i"}
             </p>
 
         `;
@@ -1004,184 +968,119 @@ function addPoint(imageData) {
 function updateRanking() {
 
     if (!rankingContainer) {
-
         return;
-
     }
 
-
-    const currentMonth =
-        getCurrentMonth();
-
-
-    if (rankingMonth) {
-
-        rankingMonth.textContent =
-            "Classifica " +
-            formatMonth(
-                currentMonth
-            );
-
-    }
-
+    rankingContainer.innerHTML =
+        "";
 
     const ranking =
         Object.keys(users)
             .map(
-                nickname => ({
+                nickname => {
 
-                    nickname,
+                    const user =
+                        users[nickname];
 
-                    score:
-                        users[nickname].score
+                    return {
 
-                })
+                        nickname:
+                            nickname,
+
+                        score:
+                            Number(
+                                user.score || 0
+                            )
+
+                    };
+
+                }
             )
             .sort(
                 (a, b) =>
                     b.score - a.score
             );
 
+    /*
+        Se non ci sono utenti
+    */
 
-    rankingContainer.innerHTML = "";
+    if (ranking.length === 0) {
 
+        rankingContainer.innerHTML = `
 
-    GAME_CONFIG.livelli.forEach(
-        (level, index) => {
+            <p>
+                Nessun giocatore presente.
+            </p>
 
-            const nextLevel =
-                GAME_CONFIG.livelli[
-                    index + 1
-                ];
+        `;
 
+        return;
+    }
 
-            const usersInLevel =
-                ranking.filter(
-                    user => {
+    /*
+        Creiamo una classifica
+        semplice e ordinata
+    */
 
-                        if (!nextLevel) {
+    ranking.forEach(
+        (user, index) => {
 
-                            return (
-                                user.score >=
-                                level.minimo
-                            );
-
-                        }
-
-
-                        return (
-
-                            user.score >=
-                            level.minimo &&
-
-                            user.score <
-                            nextLevel.minimo
-
-                        );
-
-                    }
-                );
-
-
-            if (
-                usersInLevel.length === 0
-            ) {
-
-                return;
-
-            }
-
-
-            const section =
+            const row =
                 document.createElement(
                     "div"
                 );
 
-            section.className =
-                "ranking-level";
+            row.className =
+                "ranking-item";
 
-
-            const title =
+            const position =
                 document.createElement(
-                    "h2"
+                    "span"
                 );
 
-            title.textContent =
-                level.nome;
+            position.className =
+                "ranking-position";
 
+            position.textContent =
+                "#" + (index + 1);
 
-            section.appendChild(
-                title
+            const name =
+                document.createElement(
+                    "span"
+                );
+
+            name.className =
+                "ranking-name";
+
+            name.textContent =
+                user.nickname;
+
+            const score =
+                document.createElement(
+                    "span"
+                );
+
+            score.className =
+                "ranking-score";
+
+            score.textContent =
+                user.score + " pt";
+
+            row.appendChild(
+                position
             );
 
-
-            usersInLevel.forEach(
-                (user, position) => {
-
-                    const row =
-                        document.createElement(
-                            "div"
-                        );
-
-                    row.className =
-                        "ranking-item";
-
-
-                    const number =
-                        document.createElement(
-                            "span"
-                        );
-
-                    number.className =
-                        "ranking-position";
-
-                    number.textContent =
-                        "#" +
-                        (position + 1);
-
-
-                    const name =
-                        document.createElement(
-                            "span"
-                        );
-
-                    name.className =
-                        "ranking-name";
-
-                    name.textContent =
-                        user.nickname;
-
-
-                    const score =
-                        document.createElement(
-                            "span"
-                        );
-
-                    score.className =
-                        "ranking-score";
-
-                    score.textContent =
-                        user.score +
-                        " pt";
-
-
-                    row.appendChild(number);
-
-                    row.appendChild(name);
-
-                    row.appendChild(score);
-
-
-                    section.appendChild(
-                        row
-                    );
-
-                }
+            row.appendChild(
+                name
             );
 
+            row.appendChild(
+                score
+            );
 
             rankingContainer.appendChild(
-                section
+                row
             );
 
         }
@@ -1191,38 +1090,39 @@ function updateRanking() {
 
 
 /* =========================================================
-   REPERTI
+   GALLERIA
 ========================================================= */
 
 function updateGallery() {
 
     if (!gallery) {
-
         return;
-
     }
 
+    gallery.innerHTML =
+        "";
 
-    gallery.innerHTML = "";
-
-
-    if (
-        !currentNickname ||
-        !users[currentNickname]
-    ) {
-
+    if (!currentNickname) {
         return;
-
     }
 
+    const user =
+        users[currentNickname];
+
+    if (!user) {
+        return;
+    }
 
     const photos =
-        users[currentNickname].photos;
+        Array.isArray(user.photos)
+            ? user.photos
+            : [];
 
+    /*
+        Nessuna foto
+    */
 
-    if (
-        photos.length === 0
-    ) {
+    if (photos.length === 0) {
 
         gallery.innerHTML = `
 
@@ -1233,15 +1133,16 @@ function updateGallery() {
         `;
 
         return;
-
     }
 
+    /*
+        Dalla più recente alla più vecchia
+    */
 
-    const reversed =
+    const reversedPhotos =
         [...photos].reverse();
 
-
-    reversed.forEach(
+    reversedPhotos.forEach(
         photo => {
 
             const item =
@@ -1252,6 +1153,9 @@ function updateGallery() {
             item.className =
                 "gallery-item";
 
+            /*
+                Immagine
+            */
 
             const image =
                 document.createElement(
@@ -1264,6 +1168,9 @@ function updateGallery() {
             image.alt =
                 "Reperto";
 
+            /*
+                Informazioni
+            */
 
             const info =
                 document.createElement(
@@ -1273,17 +1180,20 @@ function updateGallery() {
             info.className =
                 "gallery-info";
 
+            info.textContent =
+                `+${photo.points} punti • ${photo.object}`;
 
-            info.innerHTML =
-                `+${photo.points} punto • ${escapeHTML(photo.object)}`;
+            item.appendChild(
+                image
+            );
 
+            item.appendChild(
+                info
+            );
 
-            item.appendChild(image);
-
-            item.appendChild(info);
-
-
-            gallery.appendChild(item);
+            gallery.appendChild(
+                item
+            );
 
         }
     );
@@ -1295,194 +1205,193 @@ function updateGallery() {
    NAVIGAZIONE
 ========================================================= */
 
-document
-    .querySelectorAll(".nav-button")
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const pageID =
-                        button.dataset.page;
+const navButtons =
+    document.querySelectorAll(
+        ".nav-button"
+    );
 
 
-                    document
-                        .querySelectorAll(".page")
-                        .forEach(
-                            page => {
+navButtons.forEach(
+    button => {
 
-                                page.classList.remove(
-                                    "active"
-                                );
+        button.addEventListener(
+            "click",
+            function () {
 
-                            }
-                        );
+                const pageID =
+                    button.dataset.page;
 
+                if (!pageID) {
+                    return;
+                }
 
-                    const selectedPage =
-                        document.getElementById(
-                            pageID
-                        );
+                /*
+                    Nascondi tutte le pagine
+                */
 
+                document
+                    .querySelectorAll(".page")
+                    .forEach(
+                        page => {
 
-                    if (selectedPage) {
+                            page.classList.remove(
+                                "active"
+                            );
 
-                        selectedPage.classList.add(
-                            "active"
-                        );
+                        }
+                    );
 
-                    }
+                /*
+                    Mostra pagina selezionata
+                */
 
+                const selectedPage =
+                    document.getElementById(
+                        pageID
+                    );
 
-                    document
-                        .querySelectorAll(".nav-button")
-                        .forEach(
-                            btn => {
+                if (selectedPage) {
 
-                                btn.classList.remove(
-                                    "active"
-                                );
-
-                            }
-                        );
-
-
-                    button.classList.add(
+                    selectedPage.classList.add(
                         "active"
                     );
 
                 }
-            );
 
-        }
-    );
+                /*
+                    Aggiorna pulsanti
+                */
+
+                navButtons.forEach(
+                    btn => {
+
+                        btn.classList.remove(
+                            "active"
+                        );
+
+                    }
+                );
+
+                button.classList.add(
+                    "active"
+                );
+
+            }
+        );
+
+    }
+);
 
 
 /* =========================================================
    MODALE
 ========================================================= */
 
-if (closeModal && photoModal) {
+if (closeModal) {
 
     closeModal.addEventListener(
         "click",
-        () => {
+        function () {
 
-            photoModal.classList.add(
+            if (photoModal) {
+
+                photoModal.classList.add(
+                    "hidden"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CHIUSURA MODALE CLICCANDO FUORI
+========================================================= */
+
+if (photoModal) {
+
+    photoModal.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target ===
+                photoModal
+            ) {
+
+                photoModal.classList.add(
+                    "hidden"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   INIZIALIZZAZIONE LOGIN
+========================================================= */
+
+function initializeLoginScreen() {
+
+    /*
+        Se esiste già un nickname salvato,
+        possiamo riaprire direttamente l'app.
+    */
+
+    if (currentNickname) {
+
+        createUser(
+            currentNickname
+        );
+
+        if (loginScreen) {
+
+            loginScreen.classList.add(
                 "hidden"
             );
 
         }
-    );
 
-}
+        if (app) {
 
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-if (logoutButton) {
-
-    logoutButton.addEventListener(
-        "click",
-        () => {
-
-            deleteCookie(
-                "nickname"
+            app.classList.remove(
+                "hidden"
             );
-
-
-            sessionStorage.removeItem(
-                "passwordInserita"
-            );
-
-
-            window.location.href =
-                "index.html";
 
         }
-    );
 
-}
+        initializeApplication();
 
+        return;
+    }
 
-/* =========================================================
-   MESE FORMATTATO
-========================================================= */
+    /*
+        Nessun nickname:
+        mostra login
+    */
 
-function formatMonth(value) {
+    if (loginScreen) {
 
-    const [
-        year,
-        month
-    ] =
-        value.split("-");
-
-
-    const names = [
-
-        "Gennaio",
-
-        "Febbraio",
-
-        "Marzo",
-
-        "Aprile",
-
-        "Maggio",
-
-        "Giugno",
-
-        "Luglio",
-
-        "Agosto",
-
-        "Settembre",
-
-        "Ottobre",
-
-        "Novembre",
-
-        "Dicembre"
-
-    ];
-
-
-    return (
-
-        names[
-            Number(month) - 1
-        ] +
-
-        " " +
-
-        year
-
-    );
-
-}
-
-
-/* =========================================================
-   SICUREZZA TESTO
-========================================================= */
-
-function escapeHTML(text) {
-
-    const element =
-        document.createElement(
-            "div"
+        loginScreen.classList.remove(
+            "hidden"
         );
 
+    }
 
-    element.textContent =
-        text;
+    if (app) {
 
+        app.classList.add(
+            "hidden"
+        );
 
-    return element.innerHTML;
+    }
 
 }
 
@@ -1491,5 +1400,6 @@ function escapeHTML(text) {
    AVVIO
 ========================================================= */
 
-initializeApplication();
-```
+checkMonthlyReset();
+
+initializeLoginScreen();
