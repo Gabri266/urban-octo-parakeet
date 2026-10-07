@@ -145,8 +145,41 @@
 
     </div>
 
+<script>
+    console.log("SCRIPT INLINE CARICATO");
 
-    <script src="script.js"></script>
+    const testButton = document.getElementById("loginButton");
+
+    testButton.addEventListener("click", function () {
+        console.log("CLICK RILEVATO");
+
+        const loginScreen =
+            document.getElementById("loginScreen");
+
+        const app =
+            document.getElementById("app");
+
+        const nicknameInput =
+            document.getElementById("nicknameInput");
+
+        const nicknameDisplay =
+            document.getElementById("nicknameDisplay");
+
+        const nickname =
+            nicknameInput.value.trim();
+
+        if (nickname === "") {
+            alert("Inserisci un nickname");
+            return;
+        }
+
+        nicknameDisplay.textContent = nickname;
+
+        loginScreen.classList.add("hidden");
+        app.classList.remove("hidden");
+    });
+</script>
+    
 
 </body>
 </html>
