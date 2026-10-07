@@ -1,74 +1,153 @@
+```html
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Accesso</title>
+    <title>Punti</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 100px;
-        }
-
-        #paginaPrincipale {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- PAGINA DI CONTROLLO NICKNAME -->
-    <div id="loginNickname">
+    <!-- LOGIN / SCELTA NICKNAME -->
+    <div id="loginScreen" class="screen">
+        <div class="login-box">
+            <h1>Benvenuto</h1>
+            <p>Inserisci il tuo nickname</p>
 
-        <h1>Inserisci nickname</h1>
+            <input
+                type="text"
+                id="nicknameInput"
+                placeholder="Nickname"
+                maxlength="20"
+                autocomplete="off"
+            >
 
-        <input
-            type="text"
-            id="nickname"
-            placeholder="Nickname"
-        >
+            <button id="loginButton">ENTRA</button>
 
-        <button onclick="controllaAccount()">
-            Continua
-        </button>
+            <p id="loginError" class="error"></p>
+        </div>
+    </div>
 
-        <p id="errore"></p>
+
+    <!-- APP -->
+    <div id="app" class="hidden">
+
+        <!-- HOME -->
+        <main id="homePage" class="page active">
+
+            <div class="top">
+                <span>Ciao,</span>
+                <strong id="nicknameDisplay">---</strong>
+            </div>
+
+            <div class="score-container">
+
+                <div class="score-label">
+                    IL TUO PUNTEGGIO
+                </div>
+
+                <div id="scoreDisplay" class="score">
+                    0
+                </div>
+
+                <div id="levelDisplay" class="level">
+                    LIVELLO 1
+                </div>
+
+            </div>
+
+            <button id="addButton" class="add-button">
+                <span>＋</span>
+                AGGIUNGI
+            </button>
+
+            <!-- Input fotocamera -->
+            <input
+                type="file"
+                id="cameraInput"
+                accept="image/*"
+                capture="environment"
+                hidden
+            >
+
+            <div id="statusMessage" class="status"></div>
+
+        </main>
+
+
+        <!-- CLASSIFICA -->
+        <main id="rankingPage" class="page">
+
+            <h1>Classifica</h1>
+
+            <div id="rankingContainer"></div>
+
+        </main>
+
+
+        <!-- REPERTI -->
+        <main id="galleryPage" class="page">
+
+            <h1>I miei reperti</h1>
+
+            <p class="private-text">
+                Queste fotografie sono private e visibili solo a te.
+            </p>
+
+            <div id="gallery" class="gallery"></div>
+
+        </main>
+
+
+        <!-- NAVIGATION -->
+        <nav class="bottom-nav">
+
+            <button class="nav-button" data-page="rankingPage">
+                <span>🏆</span>
+                <small>Classifica</small>
+            </button>
+
+            <button class="nav-button home-button active" data-page="homePage">
+                <span>⌂</span>
+                <small>Home</small>
+            </button>
+
+            <button class="nav-button" data-page="galleryPage">
+                <span>📷</span>
+                <small>Reperti</small>
+            </button>
+
+        </nav>
 
     </div>
 
 
-    <!-- VERA PAGINA PRINCIPALE -->
-    <div id="paginaPrincipale">
+    <!-- MODALE FOTO -->
+    <div id="photoModal" class="modal hidden">
 
-        <h1>Benvenuto <span id="nomeUtente"></span></h1>
+        <div class="modal-box">
 
-        <h2>Punti: <span id="punti">0</span></h2>
+            <h2>Foto acquisita</h2>
 
-        <button onclick="aggiungi()">
-            Aggiungi
-        </button>
+            <img id="previewImage" src="" alt="Foto acquisita">
 
-        <hr>
+            <div id="verificationResult"></div>
 
-        <h2>Classifica</h2>
+            <button id="closeModal">
+                CHIUDI
+            </button>
 
-        <div id="classifica"></div>
-
-        <hr>
-
-        <h2>Reperto fotografico</h2>
-
-        <div id="reperti"></div>
+        </div>
 
     </div>
 
 
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 
 </body>
 </html>
+```
