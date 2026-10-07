@@ -1,5 +1,6 @@
 /* =========================================================
-   PUNTI - STILE BOSCAIOLO / SEGHERIA
+   PUNTI
+   SEGHERIA / BOSCAIOLO / TRONCHI
    ========================================================= */
 
 :root {
@@ -24,6 +25,7 @@
     --shadow: rgba(0, 0, 0, 0.45);
 }
 
+
 /* =========================================================
    RESET
    ========================================================= */
@@ -42,22 +44,42 @@ body {
     min-height: 100vh;
     min-height: 100svh;
 
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
 
     color: var(--text);
 
     background:
-        radial-gradient(circle at 20% 10%, rgba(80, 120, 70, .25), transparent 25%),
-        radial-gradient(circle at 80% 90%, rgba(0, 0, 0, .25), transparent 30%),
-        linear-gradient(145deg, #10251a, #1c3925 50%, #10251a);
+        radial-gradient(
+            circle at 20% 10%,
+            rgba(80, 120, 70, .25),
+            transparent 25%
+        ),
+        radial-gradient(
+            circle at 80% 90%,
+            rgba(0, 0, 0, .25),
+            transparent 30%
+        ),
+        linear-gradient(
+            145deg,
+            #10251a,
+            #1c3925 50%,
+            #10251a
+        );
 
     overflow-x: hidden;
 }
 
-/* Effetto leggero "foresta" */
+
+/* Effetto verticale tipo foresta */
 
 body::before {
     content: "";
+
     position: fixed;
     inset: 0;
 
@@ -77,14 +99,30 @@ body::before {
     z-index: -1;
 }
 
+
+/* =========================================================
+   FONT
+   ========================================================= */
+
+.login-box h1,
+.page h1,
+.modal-box h2,
+.score {
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+}
+
+
+/* =========================================================
+   GENERALE
+   ========================================================= */
+
 button,
 input {
     font: inherit;
 }
-
-/* =========================================================
-   UTILITÀ
-   ========================================================= */
 
 .hidden {
     display: none !important;
@@ -92,10 +130,14 @@ input {
 
 .error {
     color: #ffb4a8;
+
     min-height: 20px;
+
     margin-top: 10px;
+
     font-size: 14px;
 }
+
 
 /* =========================================================
    LOGIN
@@ -106,11 +148,13 @@ input {
     min-height: 100svh;
 
     display: flex;
+
     justify-content: center;
     align-items: center;
 
     padding: 24px;
 }
+
 
 .login-box {
     position: relative;
@@ -129,9 +173,14 @@ input {
             rgba(50, 25, 12, .2) 50%,
             transparent 80%
         ),
-        linear-gradient(135deg, #8b572f, #63391f);
+        linear-gradient(
+            135deg,
+            #8b572f,
+            #63391f
+        );
 
     border: 4px solid #3b2113;
+
     border-radius: 18px;
 
     box-shadow:
@@ -141,19 +190,26 @@ input {
     overflow: hidden;
 }
 
-/* decorazione */
+
+/* 🪚🍆🪚 */
 
 .login-box::before {
-    content: "🪓";
+    content: "🪚 🍆 🪚";
 
     display: block;
 
-    font-size: 52px;
+    font-size: 42px;
 
-    margin-bottom: 5px;
+    letter-spacing: 8px;
 
-    filter: drop-shadow(0 4px 3px rgba(0,0,0,.35));
+    margin-bottom: 8px;
+
+    filter:
+        drop-shadow(
+            0 4px 3px rgba(0,0,0,.35)
+        );
 }
+
 
 .login-box::after {
     content: "";
@@ -171,9 +227,8 @@ input {
     border-radius: 50%;
 }
 
-.login-box h1 {
-    font-family: Georgia, serif;
 
+.login-box h1 {
     font-size: clamp(36px, 9vw, 52px);
 
     letter-spacing: 1px;
@@ -187,10 +242,17 @@ input {
     margin-bottom: 8px;
 }
 
+
 .login-box p {
     color: #f4dcb9;
+
     margin-bottom: 20px;
 }
+
+
+/* =========================================================
+   INPUT
+   ========================================================= */
 
 #nicknameInput {
     width: 100%;
@@ -198,6 +260,7 @@ input {
     padding: 15px 17px;
 
     border: 3px solid #4a2918;
+
     border-radius: 10px;
 
     background: #f4e2c4;
@@ -209,9 +272,11 @@ input {
     transition: .2s;
 }
 
+
 #nicknameInput::placeholder {
     color: #806344;
 }
+
 
 #nicknameInput:focus {
     border-color: var(--gold);
@@ -219,6 +284,7 @@ input {
     box-shadow:
         0 0 0 4px rgba(224,168,59,.2);
 }
+
 
 /* =========================================================
    BOTTONI
@@ -241,11 +307,13 @@ input {
         box-shadow .12s ease;
 }
 
+
 #loginButton:active,
 #closeModal:active,
 .add-button:active {
     transform: translateY(3px);
 }
+
 
 #loginButton {
     width: 100%;
@@ -259,7 +327,10 @@ input {
     color: #fff4df;
 
     background:
-        linear-gradient(#8c542e, #59321c);
+        linear-gradient(
+            #8c542e,
+            #59321c
+        );
 
     border: 3px solid #3a2113;
 
@@ -268,10 +339,12 @@ input {
         0 9px 15px rgba(0,0,0,.3);
 }
 
+
 #loginButton:hover,
 .add-button:hover {
     filter: brightness(1.12);
 }
+
 
 /* =========================================================
    APP
@@ -283,6 +356,7 @@ input {
 
     padding-bottom: 100px;
 }
+
 
 /* =========================================================
    PAGINE
@@ -300,28 +374,37 @@ input {
     animation: pageIn .25s ease;
 }
 
+
 .page.active {
     display: block;
 }
 
+
 @keyframes pageIn {
     from {
         opacity: 0;
-        transform: translateY(8px);
+
+        transform:
+            translateY(8px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+
+        transform:
+            translateY(0);
     }
 }
+
+
+/* =========================================================
+   TITOLI
+   ========================================================= */
 
 .page h1 {
     position: relative;
 
     text-align: center;
-
-    font-family: Georgia, serif;
 
     font-size: clamp(32px, 8vw, 48px);
 
@@ -334,9 +417,24 @@ input {
     margin-bottom: 25px;
 }
 
+
 .page h1::before {
-    content: "🪵 ";
+    content: "🪚 ";
+
+    font-family:
+        system-ui,
+        sans-serif;
 }
+
+
+.page h1::after {
+    content: " 🍆 🪚";
+
+    font-family:
+        system-ui,
+        sans-serif;
+}
+
 
 /* =========================================================
    HOME
@@ -344,13 +442,18 @@ input {
 
 .top {
     width: fit-content;
+
     max-width: 100%;
 
     margin: 0 auto 20px;
 
     padding: 10px 18px;
 
-    background: linear-gradient(#8b572f, #5d351e);
+    background:
+        linear-gradient(
+            #8b572f,
+            #5d351e
+        );
 
     border: 3px solid #3b2113;
 
@@ -361,29 +464,37 @@ input {
         0 8px 15px rgba(0,0,0,.3);
 }
 
+
 .top span {
     color: #e5c49b;
 }
+
 
 .top strong {
     color: #fff0d0;
 }
 
+
 /* =========================================================
-   PUNTEGGIO - EFFETTO SEZIONE DEL TRONCO
+   PUNTEGGIO
+   TRONCO VISTO DALL'ALTO
    ========================================================= */
 
 .score-container {
     position: relative;
 
     width: min(380px, 82vw);
+
     aspect-ratio: 1;
 
     margin: 25px auto 35px;
 
     display: flex;
+
     flex-direction: column;
+
     justify-content: center;
+
     align-items: center;
 
     text-align: center;
@@ -410,37 +521,51 @@ input {
     overflow: hidden;
 }
 
-/* "crepe" del tronco */
+
+/* 🪚 nella parte superiore */
 
 .score-container::before {
-    content: "";
+    content: "🪚";
 
     position: absolute;
 
-    width: 70%;
-    height: 2px;
+    top: 9%;
 
-    background: rgba(50,25,10,.25);
+    left: 50%;
 
-    transform: rotate(25deg);
+    transform:
+        translateX(-50%);
+
+    font-size: 25px;
+
+    z-index: 3;
 }
+
+
+/* 🍆🪚 nella parte inferiore */
 
 .score-container::after {
-    content: "";
+    content: "🍆 🪚";
 
     position: absolute;
 
-    width: 60%;
-    height: 2px;
+    bottom: 8%;
 
-    background: rgba(50,25,10,.2);
+    left: 50%;
 
-    transform: rotate(-42deg);
+    transform:
+        translateX(-50%);
+
+    font-size: 22px;
+
+    z-index: 3;
 }
+
 
 .score-label {
     position: relative;
-    z-index: 2;
+
+    z-index: 4;
 
     font-size: 13px;
 
@@ -453,11 +578,11 @@ input {
     margin-bottom: 5px;
 }
 
+
 .score {
     position: relative;
-    z-index: 2;
 
-    font-family: Georgia, serif;
+    z-index: 4;
 
     font-size: clamp(80px, 22vw, 130px);
 
@@ -472,9 +597,11 @@ input {
         0 8px 12px rgba(0,0,0,.35);
 }
 
+
 .level {
     position: relative;
-    z-index: 2;
+
+    z-index: 4;
 
     margin-top: 12px;
 
@@ -493,14 +620,18 @@ input {
     letter-spacing: 1px;
 }
 
+
 /* =========================================================
-   PULSANTE AGGIUNGI TRONCO
+   PULSANTE AGGIUNGI
    ========================================================= */
 
 .add-button {
+    position: relative;
+
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     gap: 12px;
@@ -533,10 +664,27 @@ input {
     font-size: 20px;
 }
 
+
 .add-button span {
     font-size: 32px;
+
     line-height: 1;
 }
+
+
+.add-button::before {
+    content: "🪚";
+
+    font-size: 28px;
+}
+
+
+.add-button::after {
+    content: "🪚 🍆";
+
+    font-size: 24px;
+}
+
 
 .status {
     min-height: 35px;
@@ -547,6 +695,7 @@ input {
 
     font-weight: 700;
 }
+
 
 /* =========================================================
    CLASSIFICA
@@ -559,6 +708,7 @@ input {
 
     gap: 12px;
 }
+
 
 .ranking-item {
     display: flex;
@@ -588,6 +738,7 @@ input {
         0 8px 12px rgba(0,0,0,.25);
 }
 
+
 .ranking-item:first-child {
     border-color: #d9a62f;
 
@@ -596,9 +747,11 @@ input {
         0 0 20px rgba(224,168,59,.25);
 }
 
+
 .ranking-item strong {
     color: #fff1d1;
 }
+
 
 .ranking-item .rank {
     min-width: 38px;
@@ -609,6 +762,7 @@ input {
 
     color: #3b2113;
 }
+
 
 .ranking-item .points {
     margin-left: auto;
@@ -623,6 +777,7 @@ input {
 
     font-weight: 900;
 }
+
 
 /* =========================================================
    GALLERIA
@@ -642,13 +797,16 @@ input {
     background: rgba(0,0,0,.2);
 }
 
+
 .gallery {
     display: grid;
 
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns:
+        repeat(2, 1fr);
 
     gap: 12px;
 }
+
 
 .gallery-item {
     padding: 7px;
@@ -663,6 +821,7 @@ input {
         0 6px 12px rgba(0,0,0,.3);
 }
 
+
 .gallery-item img {
     display: block;
 
@@ -675,6 +834,7 @@ input {
     border-radius: 5px;
 }
 
+
 /* =========================================================
    NAVIGAZIONE
    ========================================================= */
@@ -683,13 +843,18 @@ input {
     position: fixed;
 
     left: 50%;
+
     bottom: 12px;
 
-    transform: translateX(-50%);
+    transform:
+        translateX(-50%);
 
     z-index: 100;
 
-    width: min(600px, calc(100% - 20px));
+    width: min(
+        600px,
+        calc(100% - 20px)
+    );
 
     display: flex;
 
@@ -713,6 +878,7 @@ input {
         0 10px 30px rgba(0,0,0,.5);
 }
 
+
 .nav-button {
     flex: 1;
 
@@ -721,6 +887,7 @@ input {
     flex-direction: column;
 
     align-items: center;
+
     justify-content: center;
 
     gap: 2px;
@@ -740,28 +907,38 @@ input {
     transition: .15s;
 }
 
+
 .nav-button span {
     font-size: 25px;
 }
 
+
 .nav-button small {
     font-weight: 800;
+
     font-size: 11px;
 }
+
 
 .nav-button.active {
     color: #fff0ce;
 
     background:
-        linear-gradient(#89542e, #5c351e);
+        linear-gradient(
+            #89542e,
+            #5c351e
+        );
 
     box-shadow:
-        inset 0 0 0 2px rgba(255,215,150,.15);
+        inset 0 0 0 2px
+        rgba(255,215,150,.15);
 }
+
 
 .nav-button:active {
     transform: scale(.95);
 }
+
 
 /* =========================================================
    MODALE FOTO
@@ -777,14 +954,18 @@ input {
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     padding: 18px;
 
-    background: rgba(5,15,9,.82);
+    background:
+        rgba(5,15,9,.82);
 
-    backdrop-filter: blur(5px);
+    backdrop-filter:
+        blur(5px);
 }
+
 
 .modal-box {
     width: min(500px, 100%);
@@ -798,7 +979,11 @@ input {
     text-align: center;
 
     background:
-        linear-gradient(135deg, #8c592f, #5e351f);
+        linear-gradient(
+            135deg,
+            #8c592f,
+            #5e351f
+        );
 
     border: 4px solid #321b0e;
 
@@ -808,9 +993,8 @@ input {
         0 20px 50px rgba(0,0,0,.6);
 }
 
-.modal-box h2 {
-    font-family: Georgia, serif;
 
+.modal-box h2 {
     font-size: 28px;
 
     margin-bottom: 18px;
@@ -818,10 +1002,12 @@ input {
     color: #fff0d0;
 }
 
+
 #previewImage {
     display: block;
 
     width: 100%;
+
     max-height: 55vh;
 
     object-fit: contain;
@@ -835,11 +1021,13 @@ input {
     margin-bottom: 15px;
 }
 
+
 #verificationResult {
     margin: 15px 0;
 
     font-weight: 800;
 }
+
 
 #closeModal {
     width: 100%;
@@ -855,6 +1043,7 @@ input {
     border-radius: 10px;
 }
 
+
 /* =========================================================
    MESSAGGI
    ========================================================= */
@@ -863,9 +1052,11 @@ input {
     color: #b8e7a7;
 }
 
+
 .status.error {
     color: #ffb0a3;
 }
+
 
 /* =========================================================
    RESPONSIVE
@@ -874,7 +1065,8 @@ input {
 @media (min-width: 700px) {
 
     .gallery {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns:
+            repeat(3, 1fr);
     }
 
     .page {
@@ -882,6 +1074,7 @@ input {
         padding-right: 25px;
     }
 }
+
 
 @media (max-width: 420px) {
 
@@ -902,16 +1095,19 @@ input {
     }
 }
 
+
 /* =========================================================
-   ACCESSIBILITÀ / TOUCH
+   TOUCH / ACCESSIBILITÀ
    ========================================================= */
 
 button {
     -webkit-tap-highlight-color: transparent;
 }
 
+
 button:focus-visible,
 input:focus-visible {
     outline: 3px solid var(--gold);
+
     outline-offset: 3px;
 }
