@@ -1403,18 +1403,78 @@ function initializeLoginScreen() {
    RETE P2P - PEERJS
 ========================================================= */
 
+/* =========================================================
+   RETE P2P - PEERJS
+========================================================= */
+
 let peer = null;
 let p2pConnections = [];
-let peerReady = false;
 
-/*
-    ID dei peer conosciuti.
-    Vengono salvati localmente così il dispositivo
-    può ricordarsi la rete.
-*/
-let knownPeers = JSON.parse(
-    localStorage.getItem("knownPeers") || "[]"
-);
+let peerMap = {};
+let knownPeers = [];
+
+let reconnectTimer = null;
+
+
+/* =========================================================
+   STORAGE P2P
+========================================================= */
+
+function caricaPeerMap() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem("peerMap") || "{}"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Errore caricamento peerMap:",
+            error
+        );
+
+        return {};
+    }
+
+}
+
+
+function salvaPeerMap() {
+
+    localStorage.setItem(
+        "peerMap",
+        JSON.stringify(peerMap)
+    );
+
+}
+
+
+function caricaKnownPeers() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem("knownPeers") || "[]"
+        );
+
+    } catch (error) {
+
+        return [];
+    }
+
+}
+
+
+function salvaKnownPeers() {
+
+    localStorage.setItem(
+        "knownPeers",
+        JSON.stringify(knownPeers)
+    );
+
+}
 
 
 /* =========================================================
@@ -1436,82 +1496,273 @@ function avviaP2P() {
         return;
     }
 
-    peer = new Peer();
 
-    peer.on("open", function(id) {
+    peerMap =
+        caricaPeerMap();
 
-        peerReady = true;
-
-        console.log(
-            "🟢 ID P2P:",
-            id
-        );
-
-        const idElement =
-            document.getElementById(
-                "myPeerId"
-            );
-
-        if (idElement) {
-
-            idElement.textContent =
-                id;
-
-        }
-
-        aggiornaStatoP2P(
-            "🟢 Rete P2P attiva"
-        );
-
-        /*
-            Controlliamo se nell'URL c'è
-            l'ID della persona che ci ha
-            invitato.
-        */
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-        const invitedPeer =
-            params.get("peer");
-
-        if (invitedPeer) {
-
-            collegaPeer(
-                invitedPeer
-            );
-
-        } else {
-
-            /*
-                Prova a riconnettersi ai peer
-                conosciuti in precedenza.
-            */
-
-            knownPeers.forEach(
-                id => {
-
-                    if (id !== peer.id) {
-
-                        collegaPeer(id);
-
-                    }
-
-                }
-            );
-
-        }
-
-        aggiornaLinkInvito();
-
-    });
+    knownPeers =
+        caricaKnownPeers();
 
 
     /*
-        Qualcuno si collega a noi
+        Proviamo a recuperare
+        il Peer ID associato al nickname
     */
+
+    const vecchioPeerID =
+        currentNickname
+            ? peerMap[currentNickname]
+            : null;
+
+
+    console.log(
+        "Nickname:",
+        currentNickname
+    );
+
+    console.log(
+        "Vecchio Peer ID:",
+        vecchioPeerID
+    );
+
+
+    /*
+        Creiamo PeerJS.
+
+        Se abbiamo già un ID,
+        proviamo a riutilizzarlo.
+    */
+
+    try {
+
+        if (vecchioPeerID) {
+
+            peer =
+                new Peer(vecchioPeerID);
+
+        } else {
+
+            peer =
+                new Peer();
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Errore creazione Peer:",
+            error
+        );
+
+        peer =
+            new Peer();
+    }
+
+
+    /* =====================================================
+       PEER APERTO
+    ===================================================== */
+
+    peer.on(
+        "open",
+        function(id) {
+
+            console.log(
+                "ID P2P:",
+                id
+            );
+
+
+            /*
+                Associa nickname → Peer ID
+            */
+
+            if (currentNickname) {
+
+                peerMap[currentNickname] =
+                    id;
+
+                salvaPeerMap();
+
+            }
+
+
+            /*
+                Mostra ID solo per il test
+            */
+
+            const idElement =
+                document.getElementById(
+                    "myPeerId"
+                );
+
+            if (idElement) {
+
+                idElement.textContent =
+                    id;
+
+            }
+
+
+            aggiornaStatoP2P(
+                "🟢 Online"
+            );
+
+
+            /*
+                Prova subito a collegarsi
+                ai peer conosciuti
+            */
+
+            collegaAConosciuti();
+
+
+            /*
+                Avvia controllo automatico
+            */
+
+            avviaControlloConnessioni();
+
+        }
+    );
+
+
+    /* =====================================================
+       RICEZIONE CONNESSIONE
+    ===================================================== */
+
+    peer.on(
+        "connection",
+        function(conn) {
+
+            configuraConnessione(
+                conn
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       ERRORE
+    ===================================================== */
+
+    peer.on(
+        "error",
+        function(error) {
+
+            console.error(
+                "Errore P2P:",
+                error
+            );
+
+
+            /*
+                Se l'ID era già occupato,
+                significa che probabilmente
+                il vecchio dispositivo è ancora
+                collegato.
+
+                Creiamo un nuovo ID.
+            */
+
+            if (
+                error.type ===
+                "unavailable-id"
+            ) {
+
+                console.log(
+                    "Vecchio Peer ID occupato."
+                );
+
+
+                if (peer) {
+
+                    try {
+                        peer.destroy();
+                    } catch (e) {}
+
+                }
+
+
+                /*
+                    Creiamo nuovo Peer ID
+                */
+
+                setTimeout(
+                    function() {
+
+                        peer =
+                            new Peer();
+
+                        configuraNuovoPeer();
+
+                    },
+                    500
+                );
+
+                return;
+            }
+
+
+            aggiornaStatoP2P(
+                "🟡 Riconnessione..."
+            );
+
+        }
+    );
+}
+
+
+/* =========================================================
+   CONFIGURA NUOVO PEER
+========================================================= */
+
+function configuraNuovoPeer() {
+
+    peer.on(
+        "open",
+        function(id) {
+
+            console.log(
+                "Nuovo ID P2P:",
+                id
+            );
+
+
+            if (currentNickname) {
+
+                peerMap[currentNickname] =
+                    id;
+
+                salvaPeerMap();
+
+            }
+
+
+            const idElement =
+                document.getElementById(
+                    "myPeerId"
+                );
+
+            if (idElement) {
+
+                idElement.textContent =
+                    id;
+
+            }
+
+
+            aggiornaStatoP2P(
+                "🟢 Online"
+            );
+
+
+            collegaAConosciuti();
+
+        }
+    );
+
 
     peer.on(
         "connection",
@@ -1530,12 +1781,8 @@ function avviaP2P() {
         function(error) {
 
             console.error(
-                "Errore P2P:",
+                "Errore nuovo Peer:",
                 error
-            );
-
-            aggiornaStatoP2P(
-                "🔴 Errore P2P"
             );
 
         }
@@ -1544,59 +1791,97 @@ function avviaP2P() {
 
 
 /* =========================================================
-   COLLEGAMENTO PEER
+   COLLEGA PEER CONOSCIUTI
 ========================================================= */
 
-function collegaPeer(peerID) {
+function collegaAConosciuti() {
 
-    if (!peerID) {
+    if (!peer) {
         return;
     }
 
-    if (!peerReady || !peer) {
+
+    if (peer.destroyed) {
         return;
     }
 
-    if (peerID === peer.id) {
-        return;
-    }
 
-    /*
-        Evita connessioni duplicate
-    */
+    knownPeers.forEach(
+        function(peerID) {
 
-    const giaConnesso =
-        p2pConnections.some(
-            conn =>
-                conn.peer === peerID &&
-                conn.open
-        );
-
-    if (giaConnesso) {
-        return;
-    }
-
-    console.log(
-        "🔗 Collegamento a:",
-        peerID
-    );
-
-    const conn =
-        peer.connect(
-            peerID,
-            {
-                reliable: true
+            if (!peerID) {
+                return;
             }
-        );
 
-    configuraConnessione(
-        conn
+
+            /*
+                Non collegare noi stessi
+            */
+
+            if (
+                peerID ===
+                peer.id
+            ) {
+                return;
+            }
+
+
+            /*
+                Controlla se siamo
+                già collegati
+            */
+
+            const giaConnesso =
+                p2pConnections.some(
+                    conn =>
+                        conn.peer === peerID &&
+                        conn.open
+                );
+
+
+            if (giaConnesso) {
+                return;
+            }
+
+
+            console.log(
+                "Tentativo connessione:",
+                peerID
+            );
+
+
+            try {
+
+                const conn =
+                    peer.connect(
+                        peerID,
+                        {
+                            reliable: true
+                        }
+                    );
+
+
+                configuraConnessione(
+                    conn
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Errore connessione:",
+                    error
+                );
+
+            }
+
+        }
     );
+
 }
 
 
 /* =========================================================
-   CONFIGURAZIONE CONNESSIONE
+   CONFIGURA CONNESSIONE
 ========================================================= */
 
 function configuraConnessione(conn) {
@@ -1605,36 +1890,50 @@ function configuraConnessione(conn) {
         return;
     }
 
+
+    /*
+        Evita di registrare
+        due volte la stessa connessione
+    */
+
+    const esistente =
+        p2pConnections.find(
+            c =>
+                c.peer === conn.peer
+        );
+
+
+    if (esistente) {
+
+        if (
+            esistente.open
+        ) {
+
+            return;
+        }
+
+        p2pConnections =
+            p2pConnections.filter(
+                c =>
+                    c !== esistente
+            );
+
+    }
+
+
     conn.on(
         "open",
         function() {
 
             console.log(
-                "🟢 Connesso a:",
+                "Connesso a:",
                 conn.peer
             );
 
-            /*
-                Evita duplicati
-            */
-
-            const esistente =
-                p2pConnections.some(
-                    c =>
-                        c.peer ===
-                        conn.peer
-                );
-
-            if (!esistente) {
-
-                p2pConnections.push(
-                    conn
-                );
-
-            }
 
             /*
-                Salviamo il peer conosciuto
+                Salviamo il peer
+                tra quelli conosciuti
             */
 
             if (
@@ -1647,29 +1946,33 @@ function configuraConnessione(conn) {
                     conn.peer
                 );
 
-                localStorage.setItem(
-                    "knownPeers",
-                    JSON.stringify(
-                        knownPeers
-                    )
-                );
+                salvaKnownPeers();
 
             }
 
-            aggiornaListaPeer();
-
-            aggiornaStatoP2P(
-                "🟢 Connesso a " +
-                conn.peer
-            );
 
             /*
-                Mandiamo subito:
-                - utenti
-                - peer conosciuti
+                Aggiungiamo connessione
             */
 
-            inviaSyncCompleta(
+            p2pConnections.push(
+                conn
+            );
+
+
+            aggiornaStatoP2P(
+                "🟢 Connesso"
+            );
+
+
+            aggiornaListaPeer();
+
+
+            /*
+                Mandiamo i nostri dati
+            */
+
+            inviaDatiCompleti(
                 conn
             );
 
@@ -1677,18 +1980,15 @@ function configuraConnessione(conn) {
     );
 
 
-    /*
-        Ricezione dati
-    */
-
     conn.on(
         "data",
         function(data) {
 
             console.log(
-                "📦 Dati P2P ricevuti:",
+                "Dati ricevuti:",
                 data
             );
+
 
             gestisciDatiP2P(
                 data,
@@ -1698,10 +1998,6 @@ function configuraConnessione(conn) {
         }
     );
 
-
-    /*
-        Connessione chiusa
-    */
 
     conn.on(
         "close",
@@ -1713,7 +2009,13 @@ function configuraConnessione(conn) {
                         c !== conn
                 );
 
+
             aggiornaListaPeer();
+
+
+            aggiornaStatoP2P(
+                "🟡 Riconnessione..."
+            );
 
         }
     );
@@ -1730,70 +2032,98 @@ function configuraConnessione(conn) {
 
         }
     );
+
 }
 
 
 /* =========================================================
-   SINCRONIZZAZIONE COMPLETA
+   INVIA DATI COMPLETI
 ========================================================= */
 
-function inviaSyncCompleta(conn) {
+function inviaDatiCompleti(conn) {
 
-    if (!conn || !conn.open) {
+    if (!conn) {
         return;
     }
 
-    conn.send({
 
-        tipo: "SYNC",
+    if (!conn.open) {
+        return;
+    }
 
-        utenti: caricaDatiP2P(),
 
-        peers: knownPeers,
+    const utentiPubblici = {};
+
+
+    /*
+        Mandiamo SOLO nickname e punteggio.
+
+        Le fotografie NON vengono inviate.
+    */
+
+    Object.keys(users).forEach(
+        nickname => {
+
+            const user =
+                users[nickname];
+
+
+            utentiPubblici[nickname] = {
+
+                score:
+                    Number(
+                        user.score || 0
+                    ),
+
+                month:
+                    user.month ||
+                    getCurrentMonth()
+
+            };
+
+        }
+    );
+
+
+    const dati = {
+
+        tipo:
+            "SYNC",
+
+        utenti:
+            utentiPubblici,
 
         mittente:
-            currentNickname
+            currentNickname,
 
-    });
+        peerID:
+            peer
+                ? peer.id
+                : null
 
-}
+    };
 
-
-/* =========================================================
-   DATI LOCALI
-========================================================= */
-
-function caricaDatiP2P() {
 
     try {
 
-        const dati =
-            localStorage.getItem(
-                "usersData"
-            );
-
-        if (!dati) {
-            return {};
-        }
-
-        return JSON.parse(
+        conn.send(
             dati
         );
 
     } catch (error) {
 
         console.error(
-            "Errore dati P2P:",
+            "Errore invio dati:",
             error
         );
 
-        return {};
     }
+
 }
 
 
 /* =========================================================
-   RICEZIONE DATI
+   GESTIONE DATI
 ========================================================= */
 
 function gestisciDatiP2P(
@@ -1801,14 +2131,41 @@ function gestisciDatiP2P(
     conn
 ) {
 
-    if (!data || !data.tipo) {
+    if (!data) {
         return;
     }
 
 
     /*
-        SINCRONIZZAZIONE COMPLETA
+        Memorizziamo il Peer ID
+        del dispositivo remoto
     */
+
+    if (
+        data.peerID &&
+        data.peerID !== peer?.id
+    ) {
+
+        if (
+            !knownPeers.includes(
+                data.peerID
+            )
+        ) {
+
+            knownPeers.push(
+                data.peerID
+            );
+
+            salvaKnownPeers();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SYNC
+    ===================================================== */
 
     if (
         data.tipo ===
@@ -1821,77 +2178,18 @@ function gestisciDatiP2P(
 
 
         /*
-            Impariamo gli altri peer
-            conosciuti dal dispositivo
-            remoto.
+            Dopo aver ricevuto la lista,
+            proviamo a collegarci agli altri peer
         */
 
-        if (
-            Array.isArray(
-                data.peers
-            )
-        ) {
+        collegaAConosciuti();
 
-            data.peers.forEach(
-                peerID => {
-
-                    if (
-                        peerID !==
-                        peer.id &&
-                        !knownPeers.includes(
-                            peerID
-                        )
-                    ) {
-
-                        knownPeers.push(
-                            peerID
-                        );
-
-                    }
-
-                }
-            );
-
-
-            localStorage.setItem(
-                "knownPeers",
-                JSON.stringify(
-                    knownPeers
-                )
-            );
-
-
-            /*
-                Proviamo a collegarci
-                anche agli altri nodi.
-            */
-
-            data.peers.forEach(
-                peerID => {
-
-                    if (
-                        peerID !==
-                        peer.id
-                    ) {
-
-                        collegaPeer(
-                            peerID
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-        return;
     }
 
 
-    /*
-        AGGIORNAMENTO PUNTEGGIO
-    */
+    /* =====================================================
+       UPDATE
+    ===================================================== */
 
     if (
         data.tipo ===
@@ -1900,20 +2198,6 @@ function gestisciDatiP2P(
 
         sincronizzaUtente(
             data.utente
-        );
-
-        /*
-            Propaghiamo l'aggiornamento
-            agli altri peer.
-
-            Escludiamo quello da cui
-            è arrivato per evitare un
-            loop infinito.
-        */
-
-        inoltraAggiornamento(
-            data,
-            conn
         );
 
     }
@@ -1933,7 +2217,10 @@ function sincronizzaUtenti(
         return;
     }
 
-    let modificato = false;
+
+    let modificato =
+        false;
+
 
     Object.keys(
         utentiRicevuti
@@ -1945,23 +2232,40 @@ function sincronizzaUtenti(
                     nickname
                 ];
 
-            const locale =
-                users[nickname];
-
 
             /*
-                Utente completamente nuovo
+                Se l'utente non esiste
+                localmente lo creiamo
             */
 
-            if (!locale) {
+            if (!users[nickname]) {
 
-                users[nickname] =
-                    remoto;
+                users[nickname] = {
 
-                modificato = true;
+                    score:
+                        Number(
+                            remoto.score || 0
+                        ),
+
+                    month:
+                        remoto.month ||
+                        getCurrentMonth(),
+
+                    photos:
+                        []
+
+                };
+
+
+                modificato =
+                    true;
 
                 return;
             }
+
+
+            const locale =
+                users[nickname];
 
 
             /*
@@ -1970,36 +2274,21 @@ function sincronizzaUtenti(
             */
 
             if (
-                Number(remoto.score) >
-                Number(locale.score)
+                Number(
+                    remoto.score || 0
+                ) >
+                Number(
+                    locale.score || 0
+                )
             ) {
 
                 locale.score =
                     Number(
-                        remoto.score
+                        remoto.score || 0
                     );
 
-                locale.month =
-                    remoto.month;
-
-                /*
-                    Se il peer possiede
-                    foto che noi non abbiamo,
-                    le copiamo.
-                */
-
-                if (
-                    Array.isArray(
-                        remoto.photos
-                    )
-                ) {
-
-                    locale.photos =
-                        remoto.photos;
-
-                }
-
-                modificato = true;
+                modificato =
+                    true;
 
             }
 
@@ -2016,10 +2305,6 @@ function sincronizzaUtenti(
         updateRanking();
 
         updateGallery();
-
-        console.log(
-            "🟢 Classifica sincronizzata!"
-        );
 
     }
 
@@ -2040,83 +2325,65 @@ function sincronizzaUtente(
     ) {
 
         return;
-
     }
 
-    const nickname =
-        utente.nickname;
-
-    const locale =
-        users[nickname];
-
-
-    /*
-        Utente nuovo
-    */
-
-    if (!locale) {
-
-        users[nickname] =
-            utente;
-
-        saveUsers();
-
-        updateRanking();
-
-        return;
-
-    }
-
-
-    /*
-        Prendiamo il punteggio
-        maggiore.
-    */
 
     if (
-        Number(utente.score) >
-        Number(locale.score)
+        !users[
+            utente.nickname
+        ]
     ) {
 
-        users[nickname].score =
-            Number(
-                utente.score
+        users[
+            utente.nickname
+        ] = {
+
+            score:
+                Number(
+                    utente.score || 0
+                ),
+
+            month:
+                utente.month ||
+                getCurrentMonth(),
+
+            photos:
+                []
+
+        };
+
+    } else {
+
+        users[
+            utente.nickname
+        ].score =
+            Math.max(
+                Number(
+                    users[
+                        utente.nickname
+                    ].score || 0
+                ),
+                Number(
+                    utente.score || 0
+                )
             );
 
-        users[nickname].month =
-            utente.month;
-
-
-        /*
-            Sincronizza foto
-        */
-
-        if (
-            Array.isArray(
-                utente.photos
-            )
-        ) {
-
-            users[nickname].photos =
-                utente.photos;
-
-        }
-
-        saveUsers();
-
-        updateHome();
-
-        updateRanking();
-
-        updateGallery();
-
     }
+
+
+    saveUsers();
+
+    updateHome();
+
+    updateRanking();
+
+    updateGallery();
 
 }
 
 
 /* =========================================================
-   INVIO AGGIORNAMENTO
+   INVIA AGGIORNAMENTO
 ========================================================= */
 
 function inviaAggiornamentoP2P(
@@ -2127,9 +2394,11 @@ function inviaAggiornamentoP2P(
         return;
     }
 
+
     const messaggio = {
 
-        tipo: "UPDATE",
+        tipo:
+            "UPDATE",
 
         utente: {
 
@@ -2137,13 +2406,13 @@ function inviaAggiornamentoP2P(
                 currentNickname,
 
             score:
-                utente.score,
+                Number(
+                    utente.score || 0
+                ),
 
             month:
-                utente.month,
-
-            photos:
-                utente.photos
+                utente.month ||
+                getCurrentMonth()
 
         }
 
@@ -2167,7 +2436,7 @@ function inviaAggiornamentoP2P(
                 } catch (error) {
 
                     console.error(
-                        "Errore invio P2P:",
+                        "Errore invio UPDATE:",
                         error
                     );
 
@@ -2182,43 +2451,77 @@ function inviaAggiornamentoP2P(
 
 
 /* =========================================================
-   PROPAGAZIONE
+   CONTROLLO AUTOMATICO
 ========================================================= */
 
-function inoltraAggiornamento(
-    data,
-    provenienza
-) {
+function avviaControlloConnessioni() {
 
-    p2pConnections.forEach(
-        conn => {
+    if (reconnectTimer) {
 
-            if (
-                conn &&
-                conn.open &&
-                conn !==
-                provenienza
-            ) {
+        clearInterval(
+            reconnectTimer
+        );
 
-                try {
+    }
 
-                    conn.send(
-                        data
+
+    reconnectTimer =
+        setInterval(
+            function() {
+
+                /*
+                    Se PeerJS è morto,
+                    lo ricreiamo
+                */
+
+                if (
+                    !peer ||
+                    peer.destroyed
+                ) {
+
+                    console.log(
+                        "Peer non disponibile. Riavvio..."
                     );
 
-                } catch (error) {
 
-                    console.error(
-                        "Errore propagazione:",
-                        error
+                    avviaP2P();
+
+                    return;
+                }
+
+
+                /*
+                    Controlliamo i peer conosciuti
+                */
+
+                collegaAConosciuti();
+
+
+                /*
+                    Se non abbiamo connessioni
+                    ma abbiamo peer conosciuti,
+                    ritentiamo
+                */
+
+                if (
+                    p2pConnections.length === 0 &&
+                    knownPeers.length > 0
+                ) {
+
+                    aggiornaStatoP2P(
+                        "🟡 Riconnessione..."
                     );
+
+                    collegaAConosciuti();
 
                 }
 
-            }
 
-        }
-    );
+                aggiornaListaPeer();
+
+            },
+            2000
+        );
 
 }
 
@@ -2235,6 +2538,7 @@ function aggiornaStatoP2P(
         document.getElementById(
             "p2pStatus"
         );
+
 
     if (elemento) {
 
@@ -2257,9 +2561,11 @@ function aggiornaListaPeer() {
             "connectedPeers"
         );
 
+
     if (!elemento) {
         return;
     }
+
 
     if (
         p2pConnections.length === 0
@@ -2269,7 +2575,9 @@ function aggiornaListaPeer() {
             "Nessun giocatore collegato.";
 
         return;
+
     }
+
 
     elemento.innerHTML =
         p2pConnections
@@ -2280,65 +2588,6 @@ function aggiornaListaPeer() {
             .join(
                 "<br>"
             );
-
-}
-
-
-/* =========================================================
-   LINK INVITO
-========================================================= */
-
-function aggiornaLinkInvito() {
-
-    if (!peer || !peer.id) {
-        return;
-    }
-
-    /*
-        Se esiste il pulsante,
-        gli assegniamo il link.
-    */
-
-    const button =
-        document.getElementById(
-            "sharePeerButton"
-        );
-
-    if (!button) {
-        return;
-    }
-
-    button.onclick =
-        async function() {
-
-            const link =
-                window.location.origin +
-                window.location.pathname +
-                "?peer=" +
-                encodeURIComponent(
-                    peer.id
-                );
-
-            try {
-
-                await navigator.clipboard.writeText(
-                    link
-                );
-
-                aggiornaStatoP2P(
-                    "🔗 Link copiato!"
-                );
-
-            } catch {
-
-                prompt(
-                    "Copia questo link:",
-                    link
-                );
-
-            }
-
-        };
 
 }
 
@@ -2356,34 +2605,126 @@ document.addEventListener(
                 "connectPeerButton"
             );
 
+
         if (button) {
 
             button.addEventListener(
                 "click",
-                function() {
-
-                    const input =
-                        document.getElementById(
-                            "peerIdInput"
-                        );
-
-                    if (!input) {
-                        return;
-                    }
-
-                    collegaPeer(
-                        input.value.trim()
-                    );
-
-                }
+                collegaPeer
             );
 
         }
+
 
         avviaP2P();
 
     }
 );
+
+
+/* =========================================================
+   COLLEGA MANUALMENTE
+   (PER IL TEST)
+========================================================= */
+
+function collegaPeer() {
+
+    const input =
+        document.getElementById(
+            "peerIdInput"
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    const id =
+        input.value.trim();
+
+
+    if (!id) {
+
+        aggiornaStatoP2P(
+            "⚠️ Inserisci un ID"
+        );
+
+        return;
+    }
+
+
+    if (!peer) {
+
+        aggiornaStatoP2P(
+            "⚠️ P2P non pronto"
+        );
+
+        return;
+    }
+
+
+    if (
+        id === peer.id
+    ) {
+
+        aggiornaStatoP2P(
+            "⚠️ Non puoi collegarti a te stesso"
+        );
+
+        return;
+    }
+
+
+    /*
+        Salviamo il peer
+        per i prossimi caricamenti
+    */
+
+    if (
+        !knownPeers.includes(id)
+    ) {
+
+        knownPeers.push(id);
+
+        salvaKnownPeers();
+
+    }
+
+
+    aggiornaStatoP2P(
+        "🟡 Connessione..."
+    );
+
+
+    try {
+
+        const conn =
+            peer.connect(
+                id,
+                {
+                    reliable: true
+                }
+            );
+
+
+        configuraConnessione(
+            conn
+        );
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        aggiornaStatoP2P(
+            "🔴 Errore connessione"
+        );
+
+    }
+
+}
 
 /* =========================================================
    AVVIO
