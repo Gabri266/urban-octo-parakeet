@@ -472,6 +472,171 @@ async function caricaFotoDB(
 
 }
 
+const deleteButton =
+    document.createElement("button");
+
+deleteButton.textContent =
+    "🗑️ ELIMINA FOTO";
+
+deleteButton.style.width =
+    "100%";
+
+deleteButton.style.marginTop =
+    "8px";
+
+deleteButton.onclick =
+    async function() {
+
+        const conferma =
+            confirm(
+                `Eliminare la foto di ${nickname}?`
+            );
+
+        if (!conferma) {
+            return;
+        }
+
+        await adminEliminaFoto(
+            nickname,
+            photo.id
+        );
+
+    };
+
+item.appendChild(
+    deleteButton
+);
+
+
+async function adminEliminaFoto(
+    nickname,
+    photoId,
+    propaga = true
+) {
+
+    if (!isAdmin && propaga) {
+        return;
+    }
+
+    const user =
+        users[nickname];
+
+    if (
+        !user ||
+        !Array.isArray(user.photos)
+    ) {
+        return;
+    }
+
+    const index =
+        user.photos.findIndex(
+            function(photo) {
+                return photo.id === photoId;
+            }
+        );
+
+    if (index === -1) {
+        return;
+    }
+
+    const photo =
+        user.photos[index];
+
+    /*
+        Se la foto era valida,
+        togliamo il suo punto.
+    */
+
+    if (photo.valid !== false) {
+
+        user.score =
+            Math.max(
+                0,
+                Number(user.score || 0) - 1
+            );
+
+    }
+
+    /*
+        Elimina la foto fisica.
+    */
+
+    try {
+
+        await eliminaFotoDB(
+            photoId
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Errore eliminazione foto:",
+            error
+        );
+
+    }
+
+    /*
+        Elimina il riferimento.
+    */
+
+    user.photos.splice(
+        index,
+        1
+    );
+
+    saveUsers();
+
+    updateHome();
+    updateRanking();
+    updateGallery();
+    updateProfile();
+
+    /*
+        Aggiorna la schermata admin.
+    */
+
+    aggiornaAdminFotoOverlay();
+
+    /*
+        Sincronizza con gli altri peer.
+    */
+
+    if (propaga) {
+
+        inviaAzioneAdmin({
+
+            tipo:
+                "ADMIN_DELETE_PHOTO",
+
+            actionID:
+                "delete-photo-" +
+                Date.now() +
+                "-" +
+                Math.random()
+                    .toString(36)
+                    .substring(2, 8),
+
+            admin:
+                true,
+
+            adminNickname:
+                currentNickname,
+
+            nickname:
+                nickname,
+
+            photoId:
+                photoId
+
+        });
+
+    }
+
+}
+
+
+
 
 async function eliminaFotoDB(
     photoId
