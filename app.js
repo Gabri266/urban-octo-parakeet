@@ -1538,13 +1538,24 @@ if (
     "function"
 ) {
 
-    const ultimaFoto =
-        user.photos[user.photos.length - 1];
-
     inviaAggiornamentoP2P(
-        user,
-        ultimaFoto,
-        imageData
+        user
+    );
+
+}
+
+const ultimaFoto =
+    user.photos[user.photos.length - 1];
+
+if (
+    ultimaFoto &&
+    typeof inviaFotoP2P ===
+    "function"
+) {
+
+    inviaFotoP2P(
+        currentNickname,
+        ultimaFoto
     );
 
 }
@@ -2177,7 +2188,8 @@ let knownPeers =
 
 let receivedMessages =
     new Set();
-
+let photoTransfers =
+    new Map();
 
 let reconnectTimer =
     null;
@@ -2321,7 +2333,372 @@ function salvaPeer(
 
 }
 
+/* =========================================================
+   INVIO FOTO A PEZZI
+========================================================= */
 
+async function inviaFotoP2P(
+    nickname,
+    photo
+) {
+
+    if (
+        !nickname ||
+        !photo
+    ) {
+        return;
+    }
+
+    try {
+
+        const imageData =
+            await caricaFotoDB(
+                photo.id
+            );
+
+        if (!imageData) {
+
+            console.warn(
+                "Immagine non trovata:",
+                photo.id
+            );
+
+            return;
+        }
+
+
+        for (
+            const conn of p2pConnections
+        ) {
+
+            if (
+                conn &&
+                conn.open
+            ) {
+
+                await inviaSingolaFotoP2P(
+                    conn,
+                    nickname,
+                    photo,
+                    imageData
+                );
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Errore invio foto P2P:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   INVIA TUTTE LE FOTO DI UN UTENTE
+========================================================= */
+
+async function inviaFotoUtenteP2P(
+    conn,
+    nickname
+) {
+
+    if (
+        !conn ||
+        !conn.open ||
+        !nickname
+    ) {
+
+        return;
+    }
+
+
+    const user =
+        users[nickname];
+
+    if (
+        !user ||
+        !Array.isArray(user.photos)
+    ) {
+
+        return;
+    }
+
+
+    for (
+        const photo of user.photos
+    ) {
+
+        await inviaSingolaFotoDaDB(
+            conn,
+            nickname,
+            photo
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   INVIA SINGOLA FOTO
+========================================================= */
+
+async function inviaSingolaFotoDaDB(
+    conn,
+    nickname,
+    photo
+) {
+
+    try {
+
+        const imageData =
+            await caricaFotoDB(
+                photo.id
+            );
+
+        if (!imageData) {
+            return;
+        }
+
+        await inviaSingolaFotoP2P(
+            conn,
+            nickname,
+            photo,
+            imageData
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Errore invio singola foto:",
+            error
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TRASFERIMENTO A BLOCCHI
+========================================================= */
+
+async function inviaSingolaFotoP2P(
+    conn,
+    nickname,
+    photo,
+    imageData
+) {
+
+    if (
+        !conn ||
+        !conn.open
+    ) {
+
+        return;
+    }
+
+
+    const transferID =
+        nickname +
+        "-" +
+        photo.id +
+        "-" +
+        Date.now();
+
+
+    /*
+        Blocchi piccoli per evitare
+        messaggi WebRTC troppo grandi.
+    */
+
+    const CHUNK_SIZE =
+        32000;
+
+
+    const totalChunks =
+        Math.ceil(
+            imageData.length /
+            CHUNK_SIZE
+        );
+
+
+    /*
+        START
+    */
+
+    inviaMessaggio(
+        conn,
+        {
+
+            tipo:
+                "PHOTO_START",
+
+            transferID:
+                transferID,
+
+            nickname:
+                nickname,
+
+            totalChunks:
+                totalChunks,
+
+            photo: {
+
+                id:
+                    photo.id,
+
+                points:
+                    photo.points,
+
+                date:
+                    photo.date,
+
+                object:
+                    photo.object,
+
+                valid:
+                    photo.valid !== false
+
+            }
+
+        }
+    );
+
+
+    /*
+        CHUNKS
+    */
+
+    for (
+        let i = 0;
+        i < totalChunks;
+        i++
+    ) {
+
+        if (!conn.open) {
+            return;
+        }
+
+
+        const start =
+            i *
+            CHUNK_SIZE;
+
+
+        const chunk =
+            imageData.substring(
+                start,
+                start +
+                CHUNK_SIZE
+            );
+
+
+        inviaMessaggio(
+            conn,
+            {
+
+                tipo:
+                    "PHOTO_CHUNK",
+
+                transferID:
+                    transferID,
+
+                index:
+                    i,
+
+                chunk:
+                    chunk
+
+            }
+        );
+
+
+        /*
+            Piccola pausa per
+            non saturare il canale.
+        */
+
+        await new Promise(
+            function(resolve) {
+
+                setTimeout(
+                    resolve,
+                    5
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+        END
+    */
+
+    if (conn.open) {
+
+        inviaMessaggio(
+            conn,
+            {
+
+                tipo:
+                    "PHOTO_END",
+
+                transferID:
+                    transferID
+
+            }
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RICHIEDI TUTTE LE FOTO AGLI ALTRI
+========================================================= */
+
+function richiediTutteLeFotoP2P() {
+
+    const richiesta = {
+
+        tipo:
+            "PHOTO_REQUEST",
+
+        mittente:
+            currentNickname
+
+    };
+
+
+    p2pConnections.forEach(
+        function(conn) {
+
+            if (
+                conn &&
+                conn.open
+            ) {
+
+                inviaMessaggio(
+                    conn,
+                    richiesta
+                );
+
+            }
+
+        }
+    );
+
+}
 /* =========================================================
    AVVIO P2P
 ========================================================= */
@@ -2794,7 +3171,16 @@ function configuraConnessione(
             inviaDatiCompleti(
                 conn
             );
-
+            for (
+                const nickname of Object.keys(users)
+            ) {
+            
+                inviaFotoUtenteP2P(
+                    conn,
+                    nickname
+                );
+            
+            }
         }
     );
 
@@ -2979,10 +3365,7 @@ async function inviaTutteLeFoto(conn) {
     }
 
 }
-async function gestisciDatiP2P(
-    data,
-    conn
-) {
+async function gestisciDatiP2P(data, conn) {
 
     if (!data) {
         return;
@@ -2993,10 +3376,7 @@ async function gestisciDatiP2P(
        HELLO
     ===================================================== */
 
-    if (
-        data.tipo ===
-        "HELLO"
-    ) {
+    if (data.tipo === "HELLO") {
 
         if (
             data.nickname &&
@@ -3012,9 +3392,7 @@ async function gestisciDatiP2P(
 
         }
 
-
         return;
-
     }
 
 
@@ -3022,29 +3400,18 @@ async function gestisciDatiP2P(
        SYNC
     ===================================================== */
 
-    if (
-        data.tipo ===
-        "SYNC"
-    ) {
+    if (data.tipo === "SYNC") {
 
         sincronizzaUtenti(
             data.utenti
         );
 
-
-        /*
-            Riceviamo i peer conosciuti.
-        */
-
         if (
             data.peers &&
-            typeof data.peers ===
-            "object"
+            typeof data.peers === "object"
         ) {
 
-            Object.keys(
-                data.peers
-            ).forEach(
+            Object.keys(data.peers).forEach(
                 function(nickname) {
 
                     if (
@@ -3054,9 +3421,7 @@ async function gestisciDatiP2P(
 
                         salvaPeer(
                             nickname,
-                            data.peers[
-                                nickname
-                            ]
+                            data.peers[nickname]
                         );
 
                     }
@@ -3066,17 +3431,391 @@ async function gestisciDatiP2P(
 
         }
 
-
-        /*
-            Prova a collegarsi
-            agli altri peer.
-        */
-
         collegaPeerSalvati();
 
         return;
-
     }
+
+
+    /* =====================================================
+       PUNTO AGGIUNTO
+    ===================================================== */
+
+    if (data.tipo === "POINT") {
+
+        if (!data.eventID) {
+            return;
+        }
+
+        if (
+            receivedMessages.has(
+                data.eventID
+            )
+        ) {
+            return;
+        }
+
+        receivedMessages.add(
+            data.eventID
+        );
+
+        const nickname =
+            data.nickname;
+
+        if (!nickname) {
+            return;
+        }
+
+        if (!users[nickname]) {
+
+            users[nickname] = {
+
+                score: 0,
+
+                month:
+                    getCurrentMonth(),
+
+                photos: []
+
+            };
+
+        }
+
+        if (
+            typeof users[nickname].score !==
+            "number"
+        ) {
+
+            users[nickname].score = 0;
+
+        }
+
+        users[nickname].score += 1;
+
+        saveUsers();
+
+        updateHome();
+        updateRanking();
+        updateGallery();
+        updateProfile();
+
+        p2pConnections.forEach(
+            function(otherConn) {
+
+                if (
+                    otherConn &&
+                    otherConn !== conn &&
+                    otherConn.open
+                ) {
+
+                    inviaMessaggio(
+                        otherConn,
+                        data
+                    );
+
+                }
+
+            }
+        );
+
+        return;
+    }
+
+
+    /* =====================================================
+       RICHIESTA FOTO
+    ===================================================== */
+
+    if (data.tipo === "PHOTO_REQUEST") {
+
+        /*
+            Se è specificato un nickname,
+            inviamo solo le sue foto.
+            Altrimenti inviamo tutte le nostre.
+        */
+
+        if (data.nickname) {
+
+            await inviaFotoUtenteP2P(
+                conn,
+                data.nickname
+            );
+
+        } else {
+
+            for (
+                const nickname of Object.keys(users)
+            ) {
+
+                await inviaFotoUtenteP2P(
+                    conn,
+                    nickname
+                );
+
+            }
+
+        }
+
+        return;
+    }
+
+
+    /* =====================================================
+       FOTO - INIZIO TRASFERIMENTO
+    ===================================================== */
+
+    if (data.tipo === "PHOTO_START") {
+
+        if (
+            !data.transferID ||
+            !data.photo ||
+            !data.nickname
+        ) {
+            return;
+        }
+
+        photoTransfers.set(
+            data.transferID,
+            {
+                nickname:
+                    data.nickname,
+
+                photo:
+                    data.photo,
+
+                totalChunks:
+                    Number(
+                        data.totalChunks || 0
+                    ),
+
+                chunks:
+                    [],
+
+                received:
+                    0
+            }
+        );
+
+        return;
+    }
+
+
+    /* =====================================================
+       FOTO - BLOCCO
+    ===================================================== */
+
+    if (data.tipo === "PHOTO_CHUNK") {
+
+        const transfer =
+            photoTransfers.get(
+                data.transferID
+            );
+
+        if (!transfer) {
+            return;
+        }
+
+        if (
+            typeof data.index !== "number" ||
+            typeof data.chunk !== "string"
+        ) {
+            return;
+        }
+
+        /*
+            Evita di salvare due volte
+            lo stesso blocco.
+        */
+
+        if (
+            typeof transfer.chunks[
+                data.index
+            ] === "undefined"
+        ) {
+
+            transfer.chunks[
+                data.index
+            ] = data.chunk;
+
+            transfer.received += 1;
+
+        }
+
+        return;
+    }
+
+
+    /* =====================================================
+       FOTO - FINE TRASFERIMENTO
+    ===================================================== */
+
+    if (data.tipo === "PHOTO_END") {
+
+        const transfer =
+            photoTransfers.get(
+                data.transferID
+            );
+
+        if (!transfer) {
+            return;
+        }
+
+        /*
+            Controlliamo di avere
+            tutti i blocchi.
+        */
+
+        if (
+            transfer.received !==
+            transfer.totalChunks
+        ) {
+
+            console.warn(
+                "Foto incompleta:",
+                data.transferID
+            );
+
+            return;
+        }
+
+
+        const imageData =
+            transfer.chunks.join("");
+
+
+        try {
+
+            /*
+                Salva l'immagine
+                nel database locale.
+            */
+
+            await salvaFotoDB(
+                transfer.photo.id,
+                imageData
+            );
+
+
+            /*
+                Crea l'utente se non esiste.
+            */
+
+            if (
+                !users[transfer.nickname]
+            ) {
+
+                users[transfer.nickname] = {
+
+                    score: 0,
+
+                    month:
+                        getCurrentMonth(),
+
+                    photos: []
+
+                };
+
+            }
+
+
+            const user =
+                users[transfer.nickname];
+
+
+            if (
+                !Array.isArray(
+                    user.photos
+                )
+            ) {
+
+                user.photos = [];
+
+            }
+
+
+            /*
+                Evita duplicati.
+            */
+
+            const giaPresente =
+                user.photos.some(
+                    function(photo) {
+
+                        return (
+                            photo.id ===
+                            transfer.photo.id
+                        );
+
+                    }
+                );
+
+
+            if (!giaPresente) {
+
+                user.photos.push({
+
+                    id:
+                        transfer.photo.id,
+
+                    points:
+                        Number(
+                            transfer.photo.points || 1
+                        ),
+
+                    date:
+                        transfer.photo.date ||
+                        new Date().toISOString(),
+
+                    object:
+                        transfer.photo.object ||
+                        GAME_CONFIG.obiettivo.nome,
+
+                    valid:
+                        transfer.photo.valid !== false
+
+                });
+
+                saveUsers();
+
+            }
+
+
+            /*
+                Aggiorna interfaccia.
+            */
+
+            updateHome();
+            updateRanking();
+            updateGallery();
+            updateProfile();
+
+
+            /*
+                Aggiorna immediatamente
+                la schermata admin.
+            */
+
+            aggiornaAdminFotoOverlay();
+
+
+        } catch (error) {
+
+            console.error(
+                "Errore ricostruzione foto:",
+                error
+            );
+
+        }
+
+
+        photoTransfers.delete(
+            data.transferID
+        );
+
+        return;
+    }
+
+}
 /* =====================================================
    FOTO RICEVUTA
 ===================================================== */
@@ -4174,50 +4913,156 @@ async function apriAdminFoto() {
         return;
     }
 
+
     let overlay =
-        document.getElementById("adminPhotosOverlay");
+        document.getElementById(
+            "adminPhotosOverlay"
+        );
+
 
     if (!overlay) {
 
-        overlay = document.createElement("div");
+        overlay =
+            document.createElement(
+                "div"
+            );
 
-        overlay.id = "adminPhotosOverlay";
+        overlay.id =
+            "adminPhotosOverlay";
 
-        overlay.style.position = "fixed";
-        overlay.style.inset = "0";
-        overlay.style.background = "rgba(0,0,0,0.85)";
-        overlay.style.zIndex = "99999";
-        overlay.style.overflowY = "auto";
-        overlay.style.padding = "20px";
-        overlay.style.boxSizing = "border-box";
+        overlay.style.position =
+            "fixed";
 
-        document.body.appendChild(overlay);
+        overlay.style.inset =
+            "0";
+
+        overlay.style.background =
+            "rgba(0,0,0,0.88)";
+
+        overlay.style.zIndex =
+            "99999";
+
+        overlay.style.overflowY =
+            "auto";
+
+        overlay.style.padding =
+            "20px";
+
+        overlay.style.boxSizing =
+            "border-box";
+
+
+        document.body.appendChild(
+            overlay
+        );
+
     }
 
-    overlay.innerHTML = "";
 
-    const box = document.createElement("div");
+    /*
+        Disegna immediatamente
+        le foto disponibili.
+    */
 
-    box.style.maxWidth = "700px";
-    box.style.margin = "0 auto";
-    box.style.background = "#222";
-    box.style.borderRadius = "15px";
-    box.style.padding = "20px";
-    box.style.color = "white";
+    aggiornaAdminFotoOverlay();
 
-    const title = document.createElement("h2");
+
+    /*
+        Chiede agli altri peer
+        tutte le foto.
+    */
+
+    richiediTutteLeFotoP2P();
+
+}
+function aggiornaAdminFotoOverlay() {
+
+    const overlay =
+        document.getElementById(
+            "adminPhotosOverlay"
+        );
+
+
+    if (!overlay) {
+        return;
+    }
+
+
+    overlay.innerHTML =
+        "";
+
+
+    const box =
+        document.createElement(
+            "div"
+        );
+
+
+    box.style.maxWidth =
+        "700px";
+
+    box.style.margin =
+        "0 auto";
+
+    box.style.background =
+        "#222";
+
+    box.style.borderRadius =
+        "15px";
+
+    box.style.padding =
+        "20px";
+
+    box.style.color =
+        "white";
+
+
+    const title =
+        document.createElement(
+            "h2"
+        );
+
 
     title.textContent =
         "📷 FOTO DI TUTTI GLI UTENTI";
 
-    box.appendChild(title);
 
-    const close = document.createElement("button");
+    box.appendChild(
+        title
+    );
 
-    close.textContent = "✕ CHIUDI";
 
-    close.style.width = "100%";
-    close.style.marginBottom = "20px";
+    const info =
+        document.createElement(
+            "p"
+        );
+
+
+    info.textContent =
+        "Richiesta foto agli altri dispositivi...";
+
+
+    box.appendChild(
+        info
+    );
+
+
+    const close =
+        document.createElement(
+            "button"
+        );
+
+
+    close.textContent =
+        "✕ CHIUDI";
+
+
+    close.style.width =
+        "100%";
+
+    close.style.marginBottom =
+        "20px";
+
 
     close.addEventListener(
         "click",
@@ -4228,253 +5073,189 @@ async function apriAdminFoto() {
         }
     );
 
-    box.appendChild(close);
 
-    let trovate = false;
+    box.appendChild(
+        close
+    );
 
-    for (
-        const nickname of Object.keys(users)
-    ) {
 
-        const user =
-            users[nickname];
+    let trovate =
+        false;
 
-        if (
-            !user ||
-            !Array.isArray(user.photos) ||
-            user.photos.length === 0
-        ) {
-            continue;
-        }
 
-        trovate = true;
+    Object.keys(users).forEach(
+        function(nickname) {
 
-        const userTitle =
-            document.createElement("h3");
+            const user =
+                users[nickname];
 
-        userTitle.textContent =
-            `${nickname} — ${user.score} punti`;
 
-        box.appendChild(userTitle);
+            if (
+                !user ||
+                !Array.isArray(user.photos) ||
+                user.photos.length === 0
+            ) {
 
-        for (
-            const photo of [...user.photos].reverse()
-        ) {
-
-            const item =
-                document.createElement("div");
-
-            item.style.background = "#333";
-            item.style.borderRadius = "12px";
-            item.style.padding = "10px";
-            item.style.marginBottom = "15px";
-
-            const image =
-                document.createElement("img");
-
-            image.style.width = "100%";
-            image.style.maxHeight = "400px";
-            image.style.objectFit = "contain";
-            image.style.display = "block";
-            image.style.borderRadius = "10px";
-
-            try {
-
-                const imageData =
-                    await caricaFotoDB(photo.id);
-
-                if (imageData) {
-                    image.src = imageData;
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Errore caricamento foto admin:",
-                    error
-                );
+                return;
 
             }
 
-            item.appendChild(image);
 
-            const info =
-                document.createElement("p");
-
-            info.textContent =
-                `${photo.object || "Reperto"} — +${photo.points || 1} punto`;
-
-            item.appendChild(info);
-
-            const validLabel =
-                document.createElement("p");
-
-            validLabel.textContent =
-                photo.valid === false
-                    ? "❌ FOTO NON VALIDA"
-                    : "✅ FOTO VALIDA";
-
-            item.appendChild(validLabel);
+            trovate =
+                true;
 
 
-            /* =========================
-               RENDI NON VALIDA
-            ========================= */
-
-            const invalidButton =
-                document.createElement("button");
-
-            invalidButton.textContent =
-                photo.valid === false
-                    ? "✅ RENDI VALIDA"
-                    : "❌ RENDI NON VALIDA";
-
-            invalidButton.style.width = "100%";
-
-            invalidButton.addEventListener(
-                "click",
-                async function() {
-
-                    if (
-                        photo.valid === false
-                    ) {
-
-                        photo.valid = true;
-
-                        user.score += 1;
-
-                    } else {
-
-                        photo.valid = false;
-
-                        user.score =
-                            Math.max(
-                                0,
-                                user.score - 1
-                            );
-
-                    }
-
-                    saveUsers();
-
-                    updateHome();
-                    updateRanking();
-                    updateGallery();
-                    updateProfile();
-
-                    await apriAdminFoto();
-
-                }
-            );
-
-            item.appendChild(
-                invalidButton
-            );
+            const userTitle =
+                document.createElement(
+                    "h3"
+                );
 
 
-            /* =========================
-               ELIMINA FOTO
-            ========================= */
+            userTitle.textContent =
+                `${nickname} — ${Number(user.score || 0)} punti`;
 
-            const deleteButton =
-                document.createElement("button");
-
-            deleteButton.textContent =
-                "🗑️ ELIMINA FOTO";
-
-            deleteButton.style.width = "100%";
-            deleteButton.style.marginTop = "8px";
-
-            deleteButton.addEventListener(
-                "click",
-                async function() {
-
-                    const conferma =
-                        confirm(
-                            `Eliminare definitivamente la foto di ${nickname}?`
-                        );
-
-                    if (!conferma) {
-                        return;
-                    }
-
-                    try {
-
-                        await eliminaFotoDB(
-                            photo.id
-                        );
-
-                    } catch (error) {
-
-                        console.error(
-                            "Errore eliminazione foto:",
-                            error
-                        );
-
-                    }
-
-                    const index =
-                        user.photos.indexOf(
-                            photo
-                        );
-
-                    if (
-                        index !== -1
-                    ) {
-
-                        user.photos.splice(
-                            index,
-                            1
-                        );
-
-                    }
-
-                    /*
-                        La foto dava 1 punto
-                        soltanto se era valida.
-                    */
-
-                    if (
-                        photo.valid !== false
-                    ) {
-
-                        user.score =
-                            Math.max(
-                                0,
-                                user.score - 1
-                            );
-
-                    }
-
-                    saveUsers();
-
-                    updateHome();
-                    updateRanking();
-                    updateGallery();
-                    updateProfile();
-
-                    await apriAdminFoto();
-
-                }
-            );
-
-            item.appendChild(
-                deleteButton
-            );
 
             box.appendChild(
-                item
+                userTitle
             );
+
+
+            [...user.photos]
+                .reverse()
+                .forEach(
+                    function(photo) {
+
+                        const item =
+                            document.createElement(
+                                "div"
+                            );
+
+
+                        item.style.background =
+                            "#333";
+
+                        item.style.borderRadius =
+                            "12px";
+
+                        item.style.padding =
+                            "10px";
+
+                        item.style.marginBottom =
+                            "15px";
+
+
+                        const image =
+                            document.createElement(
+                                "img"
+                            );
+
+
+                        image.style.width =
+                            "100%";
+
+                        image.style.maxHeight =
+                            "400px";
+
+                        image.style.objectFit =
+                            "contain";
+
+                        image.style.display =
+                            "block";
+
+                        image.style.borderRadius =
+                            "10px";
+
+
+                        caricaFotoDB(
+                            photo.id
+                        )
+                        .then(
+                            function(imageData) {
+
+                                if (imageData) {
+
+                                    image.src =
+                                        imageData;
+
+                                } else {
+
+                                    image.alt =
+                                        "Foto non disponibile";
+
+                                }
+
+                            }
+                        )
+                        .catch(
+                            function(error) {
+
+                                console.error(
+                                    "Errore foto admin:",
+                                    error
+                                );
+
+                            }
+                        );
+
+
+                        item.appendChild(
+                            image
+                        );
+
+
+                        const infoFoto =
+                            document.createElement(
+                                "p"
+                            );
+
+
+                        infoFoto.textContent =
+                            `${photo.object || "Reperto"} — +${Number(photo.points || 1)} punto`;
+
+
+                        item.appendChild(
+                            infoFoto
+                        );
+
+
+                        const validLabel =
+                            document.createElement(
+                                "p"
+                            );
+
+
+                        validLabel.textContent =
+                            photo.valid === false
+                                ? "❌ FOTO NON VALIDA"
+                                : "✅ FOTO VALIDA";
+
+
+                        item.appendChild(
+                            validLabel
+                        );
+
+
+                        box.appendChild(
+                            item
+                        );
+
+                    }
+                );
+
         }
-    }
+    );
+
 
     if (!trovate) {
 
         const empty =
-            document.createElement("p");
+            document.createElement(
+                "p"
+            );
+
 
         empty.textContent =
-            "Nessuna fotografia presente.";
+            "Nessuna fotografia ancora disponibile.";
 
         box.appendChild(
             empty
@@ -4482,12 +5263,12 @@ async function apriAdminFoto() {
 
     }
 
+
     overlay.appendChild(
         box
     );
+
 }
-
-
 /* =========================================================
    ADMIN - CONSOLE
 ========================================================= */
