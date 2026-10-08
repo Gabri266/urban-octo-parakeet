@@ -181,7 +181,21 @@ function deleteCookie(name) {
 let currentNickname =
     getCookie("nickname");
 
+let isAdmin = false;
 
+function pulisciNickname(nickname) {
+
+    if (nickname.startsWith("!%")) {
+        return nickname.substring(2);
+    }
+
+    return nickname;
+}
+
+function controllaAdmin(nickname) {
+
+    return nickname.startsWith("!%");
+}
 /* =========================================================
    DATABASE LOCALE
 ========================================================= */
