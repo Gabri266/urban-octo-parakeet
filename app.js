@@ -244,7 +244,97 @@ function saveUsers() {
     }
 
 }
+/* =========================================================
+   DATABASE FOTO - INDEXEDDB
+========================================================= */
 
+const PHOTO_DB_NAME = "PuntiPhotosDB";
+const PHOTO_STORE_NAME = "photos";
+
+function openPhotoDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(PHOTO_DB_NAME, 1);
+
+        request.onupgradeneeded = function(event) {
+            const db = event.target.result;
+
+            if (!db.objectStoreNames.contains(PHOTO_STORE_NAME)) {
+                db.createObjectStore(PHOTO_STORE_NAME, {
+                    keyPath: "id"
+                });
+            }
+        };
+
+        request.onsuccess = function() {
+            resolve(request.result);
+        };
+
+        request.onerror = function() {
+            reject(request.error);
+        };
+    });
+}
+
+async function salvaFotoDB(photoId, imageData) {
+    const db = await openPhotoDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(
+            PHOTO_STORE_NAME,
+            "readwrite"
+        );
+
+        const store = transaction.objectStore(PHOTO_STORE_NAME);
+
+        store.put({
+            id: photoId,
+            image: imageData
+        });
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+    });
+}
+
+async function caricaFotoDB(photoId) {
+    const db = await openPhotoDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(
+            PHOTO_STORE_NAME,
+            "readonly"
+        );
+
+        const store = transaction.objectStore(PHOTO_STORE_NAME);
+        const request = store.get(photoId);
+
+        request.onsuccess = function() {
+            resolve(request.result ? request.result.image : null);
+        };
+
+        request.onerror = function() {
+            reject(request.error);
+        };
+    });
+}
+
+async function eliminaFotoDB(photoId) {
+    const db = await openPhotoDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(
+            PHOTO_STORE_NAME,
+            "readwrite"
+        );
+
+        const store = transaction.objectStore(PHOTO_STORE_NAME);
+
+        store.delete(photoId);
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+    });
+}
 
 /* =========================================================
    CREAZIONE UTENTE
@@ -880,81 +970,69 @@ function showVerificationFailed() {
    AGGIUNTA PUNTI
 ========================================================= */
 
-function addPoint(imageData) {
+async function addPoint(imageData) {
+    if (!currentNickname) return;
 
-    if (!currentNickname) {
-        return;
+    const user = users[currentNickname];
+
+    if (!user) return;
+
+    const points = 1;
+
+    const photoId =
+        currentNickname +
+        "_" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).substring(2, 9);
+
+    try {
+        await salvaFotoDB(photoId, imageData);
+
+        user.score += points;
+
+        user.photos.push({
+            id: photoId,
+            points: points,
+            date: new Date().toISOString(),
+            object: GAME_CONFIG.obiettivo.nome,
+            valid: true
+        });
+
+        saveUsers();
+
+        if (typeof inviaAggiornamentoP2P === "function") {
+            inviaAggiornamentoP2P(user);
+        }
+
+        updateHome();
+        updateRanking();
+        updateGallery();
+
+        if (verificationResult) {
+            verificationResult.innerHTML = `
+                <div class="verification-success">
+                    ✓ Oggetto riconosciuto
+                </div>
+                <p>+1 punto</p>
+            `;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Errore salvataggio foto:",
+            error
+        );
+
+        if (verificationResult) {
+            verificationResult.innerHTML = `
+                <div class="verification-fail">
+                    ✕ Errore salvataggio foto
+                </div>
+            `;
+        }
     }
-
-    const user =
-        users[currentNickname];
-
-    if (!user) {
-        return;
-    }
-
-    const points =
-        GAME_CONFIG.obiettivo.punti;
-
-    /*
-        Aggiungiamo punti
-    */
-
-    user.score +=
-        points;
-
-    /*
-        Salviamo fotografia
-    */
-
-    user.photos.push({
-
-        image:
-            imageData,
-
-        points:
-            points,
-
-        date:
-            new Date().toISOString(),
-
-        object:
-            GAME_CONFIG.obiettivo.nome
-
-    });
-
-    /*
-        Salvataggio
-    */
-
-   saveUsers();
-   
-   inviaAggiornamentoP2P(user);
-   
-   updateHome();
-   updateRanking();
-   updateGallery();
-
-    /*
-        Risultato
-    */
-
-    if (verificationResult) {
-
-        verificationResult.innerHTML = `
-
-            <div class="verification-success">
-                ✓ Oggetto riconosciuto
-            </div>
-
-            <p>
-                +${points} punto${points === 1 ? "" : "i"}
-            </p>
-
-        `;
-
-    }
-
 }
 
 
@@ -1090,113 +1168,80 @@ function updateRanking() {
    GALLERIA
 ========================================================= */
 
-function updateGallery() {
+async function updateGallery() {
 
-    if (!gallery) {
-        return;
-    }
+    if (!gallery) return;
 
-    gallery.innerHTML =
-        "";
+    gallery.innerHTML = "";
 
-    if (!currentNickname) {
-        return;
-    }
+    if (!currentNickname) return;
 
-    const user =
-        users[currentNickname];
+    const user = users[currentNickname];
 
-    if (!user) {
-        return;
-    }
+    if (!user) return;
 
-    const photos =
-        Array.isArray(user.photos)
-            ? user.photos
-            : [];
-
-    /*
-        Nessuna foto
-    */
+    const photos = Array.isArray(user.photos)
+        ? user.photos
+        : [];
 
     if (photos.length === 0) {
 
         gallery.innerHTML = `
-
             <p class="empty-gallery">
                 Non hai ancora nessun reperto.
             </p>
-
         `;
 
         return;
     }
 
-    /*
-        Dalla più recente alla più vecchia
-    */
+    const reversedPhotos = [...photos].reverse();
 
-    const reversedPhotos =
-        [...photos].reverse();
+    for (const photo of reversedPhotos) {
 
-    reversedPhotos.forEach(
-        photo => {
+        const item = document.createElement("div");
 
-            const item =
-                document.createElement(
-                    "div"
-                );
+        item.className = "gallery-item";
 
-            item.className =
-                "gallery-item";
+        const image = document.createElement("img");
 
-            /*
-                Immagine
-            */
+        image.alt = "Reperto";
 
-            const image =
-                document.createElement(
-                    "img"
-                );
+        image.className = "gallery-photo";
 
-            image.src =
-                photo.image;
+        try {
 
-            image.alt =
-                "Reperto";
+            const imageData =
+                await caricaFotoDB(photo.id);
 
-            /*
-                Informazioni
-            */
+            if (imageData) {
+                image.src = imageData;
+            } else {
+                image.alt = "Foto non disponibile";
+            }
 
-            const info =
-                document.createElement(
-                    "div"
-                );
+        } catch (error) {
 
-            info.className =
-                "gallery-info";
-
-            info.textContent =
-                `+${photo.points} punti • ${photo.object}`;
-
-            item.appendChild(
-                image
-            );
-
-            item.appendChild(
-                info
-            );
-
-            gallery.appendChild(
-                item
+            console.error(
+                "Errore caricamento foto:",
+                error
             );
 
         }
-    );
 
+        const info = document.createElement("div");
+
+        info.className = "gallery-info";
+
+        info.textContent =
+            `+${photo.points} punto • ${photo.object}`;
+
+        item.appendChild(image);
+        item.appendChild(info);
+
+        gallery.appendChild(item);
+    }
 }
-
 
 /* =========================================================
    NAVIGAZIONE
