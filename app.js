@@ -927,17 +927,13 @@ function addPoint(imageData) {
         Salvataggio
     */
 
-    saveUsers();
-
-    /*
-        Aggiornamento interfaccia
-    */
-
-    updateHome();
-
-    updateRanking();
-
-    updateGallery();
+   saveUsers();
+   
+   inviaAggiornamentoP2P(user);
+   
+   updateHome();
+   updateRanking();
+   updateGallery();
 
     /*
         Risultato
