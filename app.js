@@ -483,9 +483,21 @@ deleteButton.style.width =
 
 deleteButton.style.marginTop =
     "8px";
+const deleteButton =
+    document.createElement("button");
 
-deleteButton.onclick =
-    async function() {
+deleteButton.textContent =
+    "🗑️ ELIMINA FOTO";
+
+deleteButton.style.width =
+    "100%";
+
+deleteButton.style.marginTop =
+    "8px";
+
+deleteButton.addEventListener(
+    "click",
+    async function () {
 
         const conferma =
             confirm(
@@ -501,10 +513,15 @@ deleteButton.onclick =
             photo.id
         );
 
-    };
+    }
+);
 
 item.appendChild(
     deleteButton
+);
+
+box.appendChild(
+    item
 );
 
 
