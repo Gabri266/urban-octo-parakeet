@@ -2345,33 +2345,26 @@ function inviaDatiCompleti(
    SINCRONIZZA UTENTI
 ========================================================= */
 
-function sincronizzaUtenti(
-    utentiRicevuti
-) {
+function sincronizzaUtenti(utentiRicevuti) {
 
     if (!utentiRicevuti) {
         return;
     }
 
+    let modificato = false;
 
-    let modificato =
-        false;
-
-
-    Object.keys(
-        utentiRicevuti
-    ).forEach(
+    Object.keys(utentiRicevuti).forEach(
         function(nickname) {
 
             const remoto =
-                utentiRicevuti[
-                    nickname
-                ];
+                utentiRicevuti[nickname];
 
+            /*
+                Se l'utente non esiste localmente,
+                lo creiamo.
+            */
 
-            if (
-                !users[nickname]
-            ) {
+            if (!users[nickname]) {
 
                 users[nickname] = {
 
@@ -2389,62 +2382,56 @@ function sincronizzaUtenti(
 
                 };
 
-
-                modificato =
-                    true;
+                modificato = true;
 
                 return;
-
             }
 
-
             /*
-                Prendiamo il punteggio
-                maggiore conosciuto.
+                L'utente esiste già.
+
+                NON sostituiamo mai il suo punteggio
+                con uno più basso.
             */
 
-            const scoreRemoto =
+            const locale =
+                Number(
+                    users[nickname].score || 0
+                );
+
+            const remotoScore =
                 Number(
                     remoto.score || 0
                 );
 
+            if (remotoScore > locale) {
 
-            const scoreLocale =
-                Number(
-                    users[nickname]
-                        .score || 0
-                );
+                users[nickname].score =
+                    remotoScore;
 
-
-            if (
-                scoreRemoto >
-                scoreLocale
-            ) {
-
-                users[nickname]
-                    .score =
-                    scoreRemoto;
-
-
-                modificato =
-                    true;
-
+                modificato = true;
             }
-
         }
     );
 
+    /*
+        Salviamo SOLO se qualcosa è cambiato.
+    */
 
     if (modificato) {
 
         saveUsers();
 
-        updateHome();
-
-        updateRanking();
-
     }
 
+    /*
+        In ogni caso aggiorniamo la classifica
+        usando i dati LOCALI.
+    */
+
+    updateHome();
+    updateRanking();
+    updateGallery();
 }
 
 
@@ -2836,6 +2823,12 @@ document.addEventListener(
 
         }
 
+
+        checkMonthlyReset();
+
+        updateHome();
+        updateRanking();
+        updateGallery();
 
         avviaP2P();
 
