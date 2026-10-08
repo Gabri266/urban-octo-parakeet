@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -102,26 +101,76 @@
 
         </main>
 
+<!-- PROFILO -->
+<main id="profilePage" class="page">
 
+    <h1>Profilo</h1>
+
+    <div class="profile-box">
+
+        <div class="profile-avatar">
+            👤
+        </div>
+
+        <h2 id="profileNickname">
+            ---
+        </h2>
+
+        <p>
+            Punteggio:
+            <strong id="profileScore">0</strong>
+        </p>
+
+    </div>
+
+    <!-- AREA ADMIN -->
+    <div id="adminArea" class="hidden">
+
+        <div class="admin-panel">
+
+            <h2>🛠️ Pannello Admin</h2>
+
+            <button id="adminPhotosButton">
+                📷 FOTO UTENTI
+            </button>
+
+            <button id="adminConsoleButton">
+                💻 CONSOLE
+            </button>
+
+        </div>
+
+    </div>
+
+</main>
         <!-- NAVIGATION -->
-        <nav class="bottom-nav">
+<nav class="bottom-nav">
 
-            <button class="nav-button" data-page="rankingPage">
-                <span>🏆</span>
-                <small>Classifica</small>
-            </button>
+    <button class="nav-button"
+            data-page="rankingPage">
+        <span>🏆</span>
+        <small>Classifica</small>
+    </button>
 
-            <button class="nav-button home-button active" data-page="homePage">
-                <span>⌂</span>
-                <small>Home</small>
-            </button>
+    <button class="nav-button home-button active"
+            data-page="homePage">
+        <span>⌂</span>
+        <small>Home</small>
+    </button>
 
-            <button class="nav-button" data-page="galleryPage">
-                <span>📷</span>
-                <small>Reperti</small>
-            </button>
+    <button class="nav-button"
+            data-page="galleryPage">
+        <span>📷</span>
+        <small>Reperti</small>
+    </button>
 
-        </nav>
+    <button class="nav-button"
+            data-page="profilePage">
+        <span>👤</span>
+        <small>Profilo</small>
+    </button>
+
+</nav>
 
     </div>
 
