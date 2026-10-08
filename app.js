@@ -191,11 +191,8 @@ function deleteCookie(name) {
    NICKNAME ATTUALE
 ========================================================= */
 
-let currentNickname =
-    getCookie("nickname");
-
-let isAdmin =
-    getCookie("isAdmin") === "1";
+let currentNickname = getCookie("nickname");
+let isAdmin = getCookie("isAdmin") === "1";
 
 function pulisciNickname(nickname) {
 
@@ -470,68 +467,91 @@ function checkMonthlyReset() {
 
 function login() {
 
-    if (!nicknameInput) {
+    if (!nicknameInput) return;
+
+    const nicknameInserito =
+        nicknameInput.value.trim();
+
+    if (nicknameInserito === "") {
+
+        if (loginError) {
+            loginError.textContent =
+                "Inserisci un nickname.";
+        }
+
+        nicknameInput.focus();
         return;
     }
 
-   const nicknameInserito = nicknameInput.value.trim();
-   
-   if (nicknameInserito === "") {
-       if (loginError) {
-           loginError.textContent =
-               "Inserisci un nickname.";
-       }
-   
-       nicknameInput.focus();
-       return;
-   }
-   
-   const admin = controllaAdmin(nicknameInserito);
-   
-   const nickname = pulisciNickname(nicknameInserito);
+    if (nicknameInserito.length > 22) {
 
-    /*
-        Controllo nickname vuoto
-    */
+        if (loginError) {
+            loginError.textContent =
+                "Il nickname è troppo lungo.";
+        }
+
+        nicknameInput.focus();
+        return;
+    }
+
+    /* =========================
+       CONTROLLO ADMIN
+    ========================= */
+
+    const admin =
+        nicknameInserito.startsWith("!%");
+
+    const nickname =
+        admin
+            ? nicknameInserito.substring(2).trim()
+            : nicknameInserito;
 
     if (nickname === "") {
 
         if (loginError) {
-
             loginError.textContent =
-                "Inserisci un nickname.";
-
+                "Inserisci un nickname dopo !%.";
         }
-
-        nicknameInput.focus();
 
         return;
     }
 
-    /*
-        Controllo lunghezza
-    */
+    /* =========================
+       LOGIN
+    ========================= */
 
-    if (nickname.length > 20) {
+    currentNickname = nickname;
 
-        if (loginError) {
+    isAdmin = admin;
 
-            loginError.textContent =
-                "Il nickname è troppo lungo.";
+    setCookie(
+        "nickname",
+        currentNickname,
+        365
+    );
 
-        }
+    setCookie(
+        "isAdmin",
+        isAdmin ? "1" : "0",
+        365
+    );
 
-        nicknameInput.focus();
+    createUser(currentNickname);
 
-        return;
+    if (loginError) {
+        loginError.textContent = "";
     }
 
-    /*
-        Salviamo nickname
-    */
+    if (loginScreen) {
+        loginScreen.classList.add("hidden");
+    }
 
-    currentNickname =
-        nickname;
+    if (app) {
+        app.classList.remove("hidden");
+    }
+
+    initializeApplication();
+}
 isAdmin = admin;
 
 setCookie(
@@ -1456,31 +1476,22 @@ if (photoModal) {
 
 function initializeLoginScreen() {
 
-    /*
-        Se esiste già un nickname salvato,
-        possiamo riaprire direttamente l'app.
-    */
+    const savedNickname = getCookie("nickname");
 
-    if (currentNickname) {
+    if (savedNickname) {
 
-        createUser(
-            currentNickname
-        );
+        currentNickname = savedNickname;
+
+        isAdmin = getCookie("isAdmin") === "1";
+
+        createUser(currentNickname);
 
         if (loginScreen) {
-
-            loginScreen.classList.add(
-                "hidden"
-            );
-
+            loginScreen.classList.add("hidden");
         }
 
         if (app) {
-
-            app.classList.remove(
-                "hidden"
-            );
-
+            app.classList.remove("hidden");
         }
 
         initializeApplication();
@@ -1488,27 +1499,13 @@ function initializeLoginScreen() {
         return;
     }
 
-    /*
-        Nessun nickname:
-        mostra login
-    */
-
     if (loginScreen) {
-
-        loginScreen.classList.remove(
-            "hidden"
-        );
-
+        loginScreen.classList.remove("hidden");
     }
 
     if (app) {
-
-        app.classList.add(
-            "hidden"
-        );
-
+        app.classList.add("hidden");
     }
-
 }
 /* =========================================================
    RETE P2P - PEERJS
