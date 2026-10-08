@@ -472,48 +472,7 @@ async function caricaFotoDB(
 
 }
 
-const deleteButton =
-    document.createElement("button");
 
-
-
-deleteButton.textContent =
-    "🗑️ ELIMINA FOTO";
-
-deleteButton.style.width =
-    "100%";
-
-deleteButton.style.marginTop =
-    "8px";
-
-deleteButton.addEventListener(
-    "click",
-    async function () {
-
-        const conferma =
-            confirm(
-                `Eliminare la foto di ${nickname}?`
-            );
-
-        if (!conferma) {
-            return;
-        }
-
-        await adminEliminaFoto(
-            nickname,
-            photo.id
-        );
-
-    }
-);
-
-item.appendChild(
-    deleteButton
-);
-
-box.appendChild(
-    item
-);
 
 
 async function adminEliminaFoto(
@@ -4989,7 +4948,46 @@ function aggiornaAdminFotoOverlay() {
                         image.style.borderRadius =
                             "10px";
 
-
+                        const deleteButton =
+                            document.createElement("button");
+                        
+                        deleteButton.textContent =
+                            "🗑️ ELIMINA FOTO";
+                        
+                        deleteButton.style.width =
+                            "100%";
+                        
+                        deleteButton.style.marginTop =
+                            "8px";
+                        
+                        deleteButton.addEventListener(
+                            "click",
+                            async function () {
+                        
+                                const conferma =
+                                    confirm(
+                                        `Eliminare la foto di ${nickname}?`
+                                    );
+                        
+                                if (!conferma) {
+                                    return;
+                                }
+                        
+                                await adminEliminaFoto(
+                                    nickname,
+                                    photo.id
+                                );
+                        
+                            }
+                        );
+                        
+                        item.appendChild(
+                            deleteButton
+                        );
+                        
+                        box.appendChild(
+                            item
+                        );
                         caricaFotoDB(
                             photo.id
                         )
