@@ -100,7 +100,20 @@ const verificationResult =
 const closeModal =
     document.getElementById("closeModal");
 
+const profileNickname =
+    document.getElementById("profileNickname");
 
+const profileScore =
+    document.getElementById("profileScore");
+
+const adminArea =
+    document.getElementById("adminArea");
+
+const adminPhotosButton =
+    document.getElementById("adminPhotosButton");
+
+const adminConsoleButton =
+    document.getElementById("adminConsoleButton");
 /* =========================================================
    CONTROLLO ELEMENTI
 ========================================================= */
@@ -181,7 +194,8 @@ function deleteCookie(name) {
 let currentNickname =
     getCookie("nickname");
 
-let isAdmin = false;
+let isAdmin =
+    getCookie("isAdmin") === "1";
 
 function pulisciNickname(nickname) {
 
@@ -614,7 +628,34 @@ if (nicknameInput) {
     );
 
 }
+function updateProfile() {
 
+    if (!currentNickname) return;
+
+    const user = users[currentNickname];
+
+    if (!user) return;
+
+    if (profileNickname) {
+        profileNickname.textContent =
+            currentNickname;
+    }
+
+    if (profileScore) {
+        profileScore.textContent =
+            user.score;
+    }
+
+    if (adminArea) {
+
+        if (isAdmin) {
+            adminArea.classList.remove("hidden");
+        } else {
+            adminArea.classList.add("hidden");
+        }
+
+    }
+}
 
 /* =========================================================
    AVVIO APPLICAZIONE
@@ -637,7 +678,7 @@ inviaAggiornamentoP2P(user);
     updateRanking();
 
     updateGallery();
-
+updateProfile();
 }
 
 
