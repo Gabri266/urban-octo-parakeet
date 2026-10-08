@@ -1406,73 +1406,120 @@ function initializeLoginScreen() {
 /* =========================================================
    RETE P2P - PEERJS
 ========================================================= */
+/* =========================================================
+   RETE P2P - PEERJS
+   ID STABILE LEGATO AL NICKNAME
+========================================================= */
 
 let peer = null;
 let p2pConnections = [];
 
-let peerMap = {};
-let knownPeers = [];
+let knownPeers = {};
+let receivedMessages = new Set();
 
 let reconnectTimer = null;
 
 
 /* =========================================================
-   STORAGE P2P
+   ID STABILE
 ========================================================= */
 
-function caricaPeerMap() {
+function creaPeerID(nickname) {
+
+    /*
+        Trasforma il nickname in un ID stabile.
+
+        Esempio:
+
+        Gabriele
+        ↓
+        punti-gabriele
+
+        Quindi ad ogni refresh
+        viene usato sempre lo stesso ID.
+    */
+
+    const pulito =
+        nickname
+            .toLowerCase()
+            .trim()
+            .normalize("NFD")
+            .replace(
+                /[\u0300-\u036f]/g,
+                ""
+            )
+            .replace(
+                /[^a-z0-9_-]/g,
+                "-"
+            )
+            .replace(
+                /-+/g,
+                "-"
+            )
+            .replace(
+                /^-|-$/g,
+                ""
+            );
+
+    return (
+        "punti-" +
+        pulito
+    );
+}
+
+
+/* =========================================================
+   STORAGE PEER
+========================================================= */
+
+function caricaPeerSalvati() {
 
     try {
 
         return JSON.parse(
-            localStorage.getItem("peerMap") || "{}"
+            localStorage.getItem(
+                "knownPeers"
+            ) || "{}"
         );
 
     } catch (error) {
-
-        console.error(
-            "Errore caricamento peerMap:",
-            error
-        );
 
         return {};
+
     }
 
 }
 
 
-function salvaPeerMap() {
-
-    localStorage.setItem(
-        "peerMap",
-        JSON.stringify(peerMap)
-    );
-
-}
-
-
-function caricaKnownPeers() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem("knownPeers") || "[]"
-        );
-
-    } catch (error) {
-
-        return [];
-    }
-
-}
-
-
-function salvaKnownPeers() {
+function salvaPeerSalvati() {
 
     localStorage.setItem(
         "knownPeers",
-        JSON.stringify(knownPeers)
+        JSON.stringify(
+            knownPeers
+        )
     );
+
+}
+
+
+/* =========================================================
+   SALVA PEER
+========================================================= */
+
+function salvaPeer(
+    nickname,
+    peerID
+) {
+
+    if (!nickname || !peerID) {
+        return;
+    }
+
+    knownPeers[nickname] =
+        peerID;
+
+    salvaPeerSalvati();
 
 }
 
@@ -1483,7 +1530,10 @@ function salvaKnownPeers() {
 
 function avviaP2P() {
 
-    if (typeof Peer === "undefined") {
+    if (
+        typeof Peer ===
+        "undefined"
+    ) {
 
         console.error(
             "PeerJS non è stato caricato."
@@ -1494,25 +1544,33 @@ function avviaP2P() {
         );
 
         return;
+
     }
 
 
-    peerMap =
-        caricaPeerMap();
+    if (!currentNickname) {
+
+        console.log(
+            "Nessun nickname."
+        );
+
+        return;
+
+    }
+
 
     knownPeers =
-        caricaKnownPeers();
+        caricaPeerSalvati();
 
 
     /*
-        Proviamo a recuperare
-        il Peer ID associato al nickname
+        CREA ID STABILE
     */
 
-    const vecchioPeerID =
-        currentNickname
-            ? peerMap[currentNickname]
-            : null;
+    const mioPeerID =
+        creaPeerID(
+            currentNickname
+        );
 
 
     console.log(
@@ -1521,46 +1579,43 @@ function avviaP2P() {
     );
 
     console.log(
-        "Vecchio Peer ID:",
-        vecchioPeerID
+        "Peer ID stabile:",
+        mioPeerID
+    );
+
+
+    aggiornaStatoP2P(
+        "🟡 Connessione..."
     );
 
 
     /*
-        Creiamo PeerJS.
-
-        Se abbiamo già un ID,
-        proviamo a riutilizzarlo.
+        Se esiste già un Peer
+        lo chiudiamo.
     */
 
-    try {
+    if (peer) {
 
-        if (vecchioPeerID) {
+        try {
+            peer.destroy();
+        } catch (error) {}
 
-            peer =
-                new Peer(vecchioPeerID);
-
-        } else {
-
-            peer =
-                new Peer();
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Errore creazione Peer:",
-            error
-        );
-
-        peer =
-            new Peer();
     }
 
 
+    /*
+        CREIAMO IL PEER
+        CON ID STABILE
+    */
+
+    peer =
+        new Peer(
+            mioPeerID
+        );
+
+
     /* =====================================================
-       PEER APERTO
+       PEER PRONTO
     ===================================================== */
 
     peer.on(
@@ -1568,33 +1623,20 @@ function avviaP2P() {
         function(id) {
 
             console.log(
-                "ID P2P:",
+                "🟢 Peer aperto:",
                 id
             );
 
 
             /*
-                Associa nickname → Peer ID
-            */
-
-            if (currentNickname) {
-
-                peerMap[currentNickname] =
-                    id;
-
-                salvaPeerMap();
-
-            }
-
-
-            /*
-                Mostra ID solo per il test
+                Mostra il tuo ID
             */
 
             const idElement =
                 document.getElementById(
                     "myPeerId"
                 );
+
 
             if (idElement) {
 
@@ -1610,25 +1652,25 @@ function avviaP2P() {
 
 
             /*
-                Prova subito a collegarsi
-                ai peer conosciuti
+                Collegamento automatico
+                ai peer già conosciuti
             */
 
-            collegaAConosciuti();
+            collegaPeerSalvati();
 
 
             /*
-                Avvia controllo automatico
+                Controllo ogni 2 secondi
             */
 
-            avviaControlloConnessioni();
+            avviaControlloP2P();
 
         }
     );
 
 
     /* =====================================================
-       RICEZIONE CONNESSIONE
+       QUALCUNO SI COLLEGA A NOI
     ===================================================== */
 
     peer.on(
@@ -1652,162 +1694,110 @@ function avviaP2P() {
         function(error) {
 
             console.error(
-                "Errore P2P:",
+                "Errore PeerJS:",
                 error
             );
 
-
-            /*
-                Se l'ID era già occupato,
-                significa che probabilmente
-                il vecchio dispositivo è ancora
-                collegato.
-
-                Creiamo un nuovo ID.
-            */
 
             if (
                 error.type ===
                 "unavailable-id"
             ) {
 
-                console.log(
-                    "Vecchio Peer ID occupato."
-                );
-
-
-                if (peer) {
-
-                    try {
-                        peer.destroy();
-                    } catch (e) {}
-
-                }
-
-
                 /*
-                    Creiamo nuovo Peer ID
+                    Lo stesso nickname/ID
+                    è già aperto altrove.
                 */
 
-                setTimeout(
-                    function() {
-
-                        peer =
-                            new Peer();
-
-                        configuraNuovoPeer();
-
-                    },
-                    500
+                aggiornaStatoP2P(
+                    "⚠️ Questo nickname è già connesso"
                 );
 
                 return;
+
             }
+
+
+            aggiornaStatoP2P(
+                "🟡 Connessione persa..."
+            );
+
+        }
+    );
+
+
+    peer.on(
+        "disconnected",
+        function() {
+
+            console.log(
+                "Peer disconnesso."
+            );
 
 
             aggiornaStatoP2P(
                 "🟡 Riconnessione..."
             );
 
+
+            /*
+                Proviamo a ricollegare
+                lo stesso Peer ID.
+            */
+
+            setTimeout(
+                function() {
+
+                    if (
+                        peer &&
+                        peer.destroyed === false
+                    ) {
+
+                        try {
+
+                            peer.reconnect();
+
+                        } catch (error) {
+
+                            console.error(
+                                error
+                            );
+
+                        }
+
+                    }
+
+                },
+                500
+            );
+
         }
     );
+
 }
 
 
 /* =========================================================
-   CONFIGURA NUOVO PEER
+   COLLEGA PEER SALVATI
 ========================================================= */
 
-function configuraNuovoPeer() {
-
-    peer.on(
-        "open",
-        function(id) {
-
-            console.log(
-                "Nuovo ID P2P:",
-                id
-            );
-
-
-            if (currentNickname) {
-
-                peerMap[currentNickname] =
-                    id;
-
-                salvaPeerMap();
-
-            }
-
-
-            const idElement =
-                document.getElementById(
-                    "myPeerId"
-                );
-
-            if (idElement) {
-
-                idElement.textContent =
-                    id;
-
-            }
-
-
-            aggiornaStatoP2P(
-                "🟢 Online"
-            );
-
-
-            collegaAConosciuti();
-
-        }
-    );
-
-
-    peer.on(
-        "connection",
-        function(conn) {
-
-            configuraConnessione(
-                conn
-            );
-
-        }
-    );
-
-
-    peer.on(
-        "error",
-        function(error) {
-
-            console.error(
-                "Errore nuovo Peer:",
-                error
-            );
-
-        }
-    );
-}
-
-
-/* =========================================================
-   COLLEGA PEER CONOSCIUTI
-========================================================= */
-
-function collegaAConosciuti() {
+function collegaPeerSalvati() {
 
     if (!peer) {
         return;
     }
 
 
-    if (peer.destroyed) {
-        return;
-    }
+    Object.keys(
+        knownPeers
+    ).forEach(
+        function(nickname) {
 
+            const peerID =
+                knownPeers[
+                    nickname
+                ];
 
-    knownPeers.forEach(
-        function(peerID) {
 
             if (!peerID) {
                 return;
@@ -1815,27 +1805,35 @@ function collegaAConosciuti() {
 
 
             /*
-                Non collegare noi stessi
+                Non collegarsi a se stessi
             */
 
             if (
                 peerID ===
                 peer.id
             ) {
+
                 return;
+
             }
 
 
             /*
-                Controlla se siamo
-                già collegati
+                Controlliamo se è già connesso
             */
 
             const giaConnesso =
                 p2pConnections.some(
-                    conn =>
-                        conn.peer === peerID &&
-                        conn.open
+                    function(conn) {
+
+                        return (
+                            conn.peer ===
+                            peerID
+                            &&
+                            conn.open
+                        );
+
+                    }
                 );
 
 
@@ -1845,7 +1843,8 @@ function collegaAConosciuti() {
 
 
             console.log(
-                "Tentativo connessione:",
+                "🔗 Connessione automatica:",
+                nickname,
                 peerID
             );
 
@@ -1868,7 +1867,7 @@ function collegaAConosciuti() {
             } catch (error) {
 
                 console.error(
-                    "Errore connessione:",
+                    "Errore collegamento:",
                     error
                 );
 
@@ -1884,40 +1883,12 @@ function collegaAConosciuti() {
    CONFIGURA CONNESSIONE
 ========================================================= */
 
-function configuraConnessione(conn) {
+function configuraConnessione(
+    conn
+) {
 
     if (!conn) {
         return;
-    }
-
-
-    /*
-        Evita di registrare
-        due volte la stessa connessione
-    */
-
-    const esistente =
-        p2pConnections.find(
-            c =>
-                c.peer === conn.peer
-        );
-
-
-    if (esistente) {
-
-        if (
-            esistente.open
-        ) {
-
-            return;
-        }
-
-        p2pConnections =
-            p2pConnections.filter(
-                c =>
-                    c !== esistente
-            );
-
     }
 
 
@@ -1926,42 +1897,39 @@ function configuraConnessione(conn) {
         function() {
 
             console.log(
-                "Connesso a:",
+                "🟢 Collegato a:",
                 conn.peer
             );
 
 
             /*
-                Salviamo il peer
-                tra quelli conosciuti
+                Evita duplicati
             */
 
-            if (
-                !knownPeers.includes(
-                    conn.peer
-                )
-            ) {
+            const esistente =
+                p2pConnections.find(
+                    function(c) {
 
-                knownPeers.push(
-                    conn.peer
+                        return (
+                            c.peer ===
+                            conn.peer
+                        );
+
+                    }
                 );
 
-                salvaKnownPeers();
+
+            if (!esistente) {
+
+                p2pConnections.push(
+                    conn
+                );
 
             }
 
 
-            /*
-                Aggiungiamo connessione
-            */
-
-            p2pConnections.push(
-                conn
-            );
-
-
             aggiornaStatoP2P(
-                "🟢 Connesso"
+                "🟢 Rete connessa"
             );
 
 
@@ -1969,7 +1937,27 @@ function configuraConnessione(conn) {
 
 
             /*
-                Mandiamo i nostri dati
+                Prima cosa:
+                ci presentiamo.
+            */
+
+            inviaMessaggio(
+                conn,
+                {
+                    tipo:
+                        "HELLO",
+
+                    nickname:
+                        currentNickname,
+
+                    peerID:
+                        peer.id
+                }
+            );
+
+
+            /*
+                Poi mandiamo la classifica.
             */
 
             inviaDatiCompleti(
@@ -1983,12 +1971,6 @@ function configuraConnessione(conn) {
     conn.on(
         "data",
         function(data) {
-
-            console.log(
-                "Dati ricevuti:",
-                data
-            );
-
 
             gestisciDatiP2P(
                 data,
@@ -2005,17 +1987,15 @@ function configuraConnessione(conn) {
 
             p2pConnections =
                 p2pConnections.filter(
-                    c =>
-                        c !== conn
+                    function(c) {
+
+                        return c !== conn;
+
+                    }
                 );
 
 
             aggiornaListaPeer();
-
-
-            aggiornaStatoP2P(
-                "🟡 Riconnessione..."
-            );
 
         }
     );
@@ -2037,83 +2017,34 @@ function configuraConnessione(conn) {
 
 
 /* =========================================================
-   INVIA DATI COMPLETI
+   INVIA MESSAGGIO
 ========================================================= */
 
-function inviaDatiCompleti(conn) {
+function inviaMessaggio(
+    conn,
+    messaggio
+) {
 
-    if (!conn) {
+    if (
+        !conn ||
+        !conn.open
+    ) {
+
         return;
+
     }
-
-
-    if (!conn.open) {
-        return;
-    }
-
-
-    const utentiPubblici = {};
-
-
-    /*
-        Mandiamo SOLO nickname e punteggio.
-
-        Le fotografie NON vengono inviate.
-    */
-
-    Object.keys(users).forEach(
-        nickname => {
-
-            const user =
-                users[nickname];
-
-
-            utentiPubblici[nickname] = {
-
-                score:
-                    Number(
-                        user.score || 0
-                    ),
-
-                month:
-                    user.month ||
-                    getCurrentMonth()
-
-            };
-
-        }
-    );
-
-
-    const dati = {
-
-        tipo:
-            "SYNC",
-
-        utenti:
-            utentiPubblici,
-
-        mittente:
-            currentNickname,
-
-        peerID:
-            peer
-                ? peer.id
-                : null
-
-    };
 
 
     try {
 
         conn.send(
-            dati
+            messaggio
         );
 
     } catch (error) {
 
         console.error(
-            "Errore invio dati:",
+            "Errore invio:",
             error
         );
 
@@ -2123,7 +2054,7 @@ function inviaDatiCompleti(conn) {
 
 
 /* =========================================================
-   GESTIONE DATI
+   HELLO / SINCRONIZZAZIONE PEER
 ========================================================= */
 
 function gestisciDatiP2P(
@@ -2136,29 +2067,35 @@ function gestisciDatiP2P(
     }
 
 
-    /*
-        Memorizziamo il Peer ID
-        del dispositivo remoto
-    */
+    /* =====================================================
+       HELLO
+    ===================================================== */
 
     if (
-        data.peerID &&
-        data.peerID !== peer?.id
+        data.tipo ===
+        "HELLO"
     ) {
 
         if (
-            !knownPeers.includes(
-                data.peerID
-            )
+            data.nickname &&
+            data.peerID
         ) {
 
-            knownPeers.push(
+            salvaPeer(
+                data.nickname,
                 data.peerID
             );
 
-            salvaKnownPeers();
-
         }
+
+
+        /*
+            Ora che conosciamo il peer,
+            possiamo provare a collegarci
+            automaticamente in futuro.
+        */
+
+        return;
 
     }
 
@@ -2178,29 +2115,232 @@ function gestisciDatiP2P(
 
 
         /*
-            Dopo aver ricevuto la lista,
-            proviamo a collegarci agli altri peer
+            Riceviamo anche gli altri peer
+            conosciuti dal dispositivo.
         */
 
-        collegaAConosciuti();
+        if (
+            data.peers
+        ) {
+
+            Object.keys(
+                data.peers
+            ).forEach(
+                function(nickname) {
+
+                    if (
+                        nickname !==
+                        currentNickname
+                    ) {
+
+                        salvaPeer(
+                            nickname,
+                            data.peers[
+                                nickname
+                            ]
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+            Proviamo a collegarci
+            agli altri.
+        */
+
+        collegaPeerSalvati();
+
+        return;
 
     }
 
 
     /* =====================================================
-       UPDATE
+       PUNTO AGGIUNTO
     ===================================================== */
 
     if (
         data.tipo ===
-        "UPDATE"
+        "POINT"
     ) {
 
-        sincronizzaUtente(
-            data.utente
+        /*
+            Evita di applicare
+            due volte lo stesso punto.
+        */
+
+        if (
+            !data.eventID
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            receivedMessages.has(
+                data.eventID
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        receivedMessages.add(
+            data.eventID
         );
 
+
+        const nickname =
+            data.nickname;
+
+
+        if (!nickname) {
+            return;
+        }
+
+
+        /*
+            Crea utente se non esiste
+        */
+
+        if (
+            !users[nickname]
+        ) {
+
+            users[nickname] = {
+
+                score:
+                    0,
+
+                month:
+                    getCurrentMonth(),
+
+                photos:
+                    []
+
+            };
+
+        }
+
+
+        /*
+            Aggiunge ESATTAMENTE 1 punto
+        */
+
+        users[nickname].score += 1;
+
+
+        saveUsers();
+
+
+        updateHome();
+
+        updateRanking();
+
+        updateGallery();
+
+
+        /*
+            Propaga agli altri peer,
+            escluso quello da cui è arrivato.
+        */
+
+        p2pConnections.forEach(
+            function(otherConn) {
+
+                if (
+                    otherConn !== conn &&
+                    otherConn.open
+                ) {
+
+                    inviaMessaggio(
+                        otherConn,
+                        data
+                    );
+
+                }
+
+            }
+        );
+
+
+        return;
+
     }
+
+}
+
+
+/* =========================================================
+   INVIA SYNC
+========================================================= */
+
+function inviaDatiCompleti(
+    conn
+) {
+
+    const utenti =
+        {};
+
+
+    Object.keys(
+        users
+    ).forEach(
+        function(nickname) {
+
+            const user =
+                users[nickname];
+
+
+            utenti[nickname] = {
+
+                score:
+                    Number(
+                        user.score || 0
+                    ),
+
+                month:
+                    user.month ||
+                    getCurrentMonth()
+
+            };
+
+        }
+    );
+
+
+    inviaMessaggio(
+        conn,
+        {
+
+            tipo:
+                "SYNC",
+
+            utenti:
+                utenti,
+
+            peers:
+                knownPeers,
+
+            mittente:
+                currentNickname,
+
+            peerID:
+                peer
+                    ? peer.id
+                    : null
+
+        }
+    );
 
 }
 
@@ -2225,7 +2365,7 @@ function sincronizzaUtenti(
     Object.keys(
         utentiRicevuti
     ).forEach(
-        nickname => {
+        function(nickname) {
 
             const remoto =
                 utentiRicevuti[
@@ -2233,12 +2373,9 @@ function sincronizzaUtenti(
                 ];
 
 
-            /*
-                Se l'utente non esiste
-                localmente lo creiamo
-            */
-
-            if (!users[nickname]) {
+            if (
+                !users[nickname]
+            ) {
 
                 users[nickname] = {
 
@@ -2261,31 +2398,37 @@ function sincronizzaUtenti(
                     true;
 
                 return;
+
             }
-
-
-            const locale =
-                users[nickname];
 
 
             /*
                 Prendiamo il punteggio
-                più alto conosciuto.
+                maggiore conosciuto.
             */
 
-            if (
+            const scoreRemoto =
                 Number(
                     remoto.score || 0
-                ) >
+                );
+
+
+            const scoreLocale =
                 Number(
-                    locale.score || 0
-                )
+                    users[nickname]
+                        .score || 0
+                );
+
+
+            if (
+                scoreRemoto >
+                scoreLocale
             ) {
 
-                locale.score =
-                    Number(
-                        remoto.score || 0
-                    );
+                users[nickname]
+                    .score =
+                    scoreRemoto;
+
 
                 modificato =
                     true;
@@ -2304,143 +2447,75 @@ function sincronizzaUtenti(
 
         updateRanking();
 
-        updateGallery();
-
     }
 
 }
 
 
 /* =========================================================
-   SINCRONIZZA SINGOLO UTENTE
-========================================================= */
-
-function sincronizzaUtente(
-    utente
-) {
-
-    if (
-        !utente ||
-        !utente.nickname
-    ) {
-
-        return;
-    }
-
-
-    if (
-        !users[
-            utente.nickname
-        ]
-    ) {
-
-        users[
-            utente.nickname
-        ] = {
-
-            score:
-                Number(
-                    utente.score || 0
-                ),
-
-            month:
-                utente.month ||
-                getCurrentMonth(),
-
-            photos:
-                []
-
-        };
-
-    } else {
-
-        users[
-            utente.nickname
-        ].score =
-            Math.max(
-                Number(
-                    users[
-                        utente.nickname
-                    ].score || 0
-                ),
-                Number(
-                    utente.score || 0
-                )
-            );
-
-    }
-
-
-    saveUsers();
-
-    updateHome();
-
-    updateRanking();
-
-    updateGallery();
-
-}
-
-
-/* =========================================================
-   INVIA AGGIORNAMENTO
+   INVIA +1
 ========================================================= */
 
 function inviaAggiornamentoP2P(
-    utente
+    user
 ) {
 
-    if (!utente) {
+    if (
+        !user ||
+        !currentNickname
+    ) {
+
         return;
+
     }
+
+
+    const eventID =
+        currentNickname +
+        "-" +
+        Date.now() +
+        "-" +
+        Math.random()
+            .toString(36)
+            .substring(2, 8);
+
+
+    /*
+        Lo segniamo come già ricevuto
+        sul nostro dispositivo.
+    */
+
+    receivedMessages.add(
+        eventID
+    );
 
 
     const messaggio = {
 
         tipo:
-            "UPDATE",
+            "POINT",
 
-        utente: {
+        eventID:
+            eventID,
 
-            nickname:
-                currentNickname,
-
-            score:
-                Number(
-                    utente.score || 0
-                ),
-
-            month:
-                utente.month ||
-                getCurrentMonth()
-
-        }
+        nickname:
+            currentNickname
 
     };
 
 
     p2pConnections.forEach(
-        conn => {
+        function(conn) {
 
             if (
                 conn &&
                 conn.open
             ) {
 
-                try {
-
-                    conn.send(
-                        messaggio
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        "Errore invio UPDATE:",
-                        error
-                    );
-
-                }
+                inviaMessaggio(
+                    conn,
+                    messaggio
+                );
 
             }
 
@@ -2451,10 +2526,10 @@ function inviaAggiornamentoP2P(
 
 
 /* =========================================================
-   CONTROLLO AUTOMATICO
+   CONTROLLO OGNI 2 SECONDI
 ========================================================= */
 
-function avviaControlloConnessioni() {
+function avviaControlloP2P() {
 
     if (reconnectTimer) {
 
@@ -2469,52 +2544,40 @@ function avviaControlloConnessioni() {
         setInterval(
             function() {
 
-                /*
-                    Se PeerJS è morto,
-                    lo ricreiamo
-                */
-
-                if (
-                    !peer ||
-                    peer.destroyed
-                ) {
-
-                    console.log(
-                        "Peer non disponibile. Riavvio..."
-                    );
-
-
-                    avviaP2P();
-
+                if (!peer) {
                     return;
                 }
 
 
                 /*
-                    Controlliamo i peer conosciuti
-                */
-
-                collegaAConosciuti();
-
-
-                /*
-                    Se non abbiamo connessioni
-                    ma abbiamo peer conosciuti,
-                    ritentiamo
+                    Peer disconnesso
                 */
 
                 if (
-                    p2pConnections.length === 0 &&
-                    knownPeers.length > 0
+                    peer.disconnected &&
+                    !peer.destroyed
                 ) {
 
-                    aggiornaStatoP2P(
-                        "🟡 Riconnessione..."
-                    );
+                    try {
 
-                    collegaAConosciuti();
+                        peer.reconnect();
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+                    }
 
                 }
+
+
+                /*
+                    Ricollega i peer salvati
+                */
+
+                collegaPeerSalvati();
 
 
                 aggiornaListaPeer();
@@ -2527,7 +2590,7 @@ function avviaControlloConnessioni() {
 
 
 /* =========================================================
-   STATO P2P
+   STATO
 ========================================================= */
 
 function aggiornaStatoP2P(
@@ -2551,7 +2614,7 @@ function aggiornaStatoP2P(
 
 
 /* =========================================================
-   LISTA PEER
+   LISTA CONNESSIONI
 ========================================================= */
 
 function aggiornaListaPeer() {
@@ -2579,52 +2642,53 @@ function aggiornaListaPeer() {
     }
 
 
+    /*
+        Mostriamo i nickname,
+        NON i Peer ID.
+    */
+
+    const nomi =
+        p2pConnections.map(
+            function(conn) {
+
+                const nickname =
+                    Object.keys(
+                        knownPeers
+                    ).find(
+                        function(nome) {
+
+                            return (
+                                knownPeers[nome] ===
+                                conn.peer
+                            );
+
+                        }
+                    );
+
+
+                return (
+                    "🟢 " +
+                    (
+                        nickname ||
+                        conn.peer
+                    )
+                );
+
+            }
+        );
+
+
     elemento.innerHTML =
-        p2pConnections
-            .map(
-                conn =>
-                    `🟢 ${conn.peer}`
-            )
-            .join(
-                "<br>"
-            );
+        nomi.join(
+            "<br>"
+        );
 
 }
 
 
 /* =========================================================
-   PULSANTE COLLEGA
-========================================================= */
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function() {
-
-        const button =
-            document.getElementById(
-                "connectPeerButton"
-            );
-
-
-        if (button) {
-
-            button.addEventListener(
-                "click",
-                collegaPeer
-            );
-
-        }
-
-
-        avviaP2P();
-
-    }
-);
-
-
-/* =========================================================
-   COLLEGA MANUALMENTE
-   (PER IL TEST)
+   COLLEGAMENTO MANUALE
+   SOLO PER IL PRIMO COLLEGAMENTO
 ========================================================= */
 
 function collegaPeer() {
@@ -2651,6 +2715,7 @@ function collegaPeer() {
         );
 
         return;
+
     }
 
 
@@ -2661,6 +2726,7 @@ function collegaPeer() {
         );
 
         return;
+
     }
 
 
@@ -2669,27 +2735,51 @@ function collegaPeer() {
     ) {
 
         aggiornaStatoP2P(
-            "⚠️ Non puoi collegarti a te stesso"
+            "⚠️ Questo è il tuo ID"
         );
 
         return;
+
     }
 
 
     /*
-        Salviamo il peer
-        per i prossimi caricamenti
+        Salviamo l'ID.
+
+        Anche se non conosciamo ancora
+        il nickname, lo salviamo con
+        un identificatore tecnico.
     */
 
-    if (
-        !knownPeers.includes(id)
-    ) {
+    let trovato =
+        Object.keys(
+            knownPeers
+        ).find(
+            function(nome) {
 
-        knownPeers.push(id);
+                return (
+                    knownPeers[nome] ===
+                    id
+                );
 
-        salvaKnownPeers();
+            }
+        );
+
+
+    if (!trovato) {
+
+        trovato =
+            "peer-" +
+            id;
 
     }
+
+
+    knownPeers[trovato] =
+        id;
+
+
+    salvaPeerSalvati();
 
 
     aggiornaStatoP2P(
@@ -2719,12 +2809,42 @@ function collegaPeer() {
         );
 
         aggiornaStatoP2P(
-            "🔴 Errore connessione"
+            "🔴 Errore"
         );
 
     }
 
 }
+
+
+/* =========================================================
+   AVVIO
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const button =
+            document.getElementById(
+                "connectPeerButton"
+            );
+
+
+        if (button) {
+
+            button.addEventListener(
+                "click",
+                collegaPeer
+            );
+
+        }
+
+
+        avviaP2P();
+
+    }
+);
 
 /* =========================================================
    AVVIO
