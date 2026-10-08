@@ -3365,6 +3365,10 @@ async function inviaTutteLeFoto(conn) {
     }
 
 }
+/* =========================================================
+   GESTIONE DATI P2P
+========================================================= */
+
 async function gestisciDatiP2P(data, conn) {
 
     if (!data) {
@@ -3411,7 +3415,9 @@ async function gestisciDatiP2P(data, conn) {
             typeof data.peers === "object"
         ) {
 
-            Object.keys(data.peers).forEach(
+            Object.keys(
+                data.peers
+            ).forEach(
                 function(nickname) {
 
                     if (
@@ -3438,7 +3444,7 @@ async function gestisciDatiP2P(data, conn) {
 
 
     /* =====================================================
-       PUNTO AGGIUNTO
+       POINT
     ===================================================== */
 
     if (data.tipo === "POINT") {
@@ -3452,6 +3458,7 @@ async function gestisciDatiP2P(data, conn) {
                 data.eventID
             )
         ) {
+
             return;
         }
 
@@ -3459,12 +3466,15 @@ async function gestisciDatiP2P(data, conn) {
             data.eventID
         );
 
+
         const nickname =
             data.nickname;
+
 
         if (!nickname) {
             return;
         }
+
 
         if (!users[nickname]) {
 
@@ -3481,6 +3491,7 @@ async function gestisciDatiP2P(data, conn) {
 
         }
 
+
         if (
             typeof users[nickname].score !==
             "number"
@@ -3490,14 +3501,17 @@ async function gestisciDatiP2P(data, conn) {
 
         }
 
+
         users[nickname].score += 1;
 
         saveUsers();
+
 
         updateHome();
         updateRanking();
         updateGallery();
         updateProfile();
+
 
         p2pConnections.forEach(
             function(otherConn) {
@@ -3528,12 +3542,6 @@ async function gestisciDatiP2P(data, conn) {
 
     if (data.tipo === "PHOTO_REQUEST") {
 
-        /*
-            Se è specificato un nickname,
-            inviamo solo le sue foto.
-            Altrimenti inviamo tutte le nostre.
-        */
-
         if (data.nickname) {
 
             await inviaFotoUtenteP2P(
@@ -3561,22 +3569,25 @@ async function gestisciDatiP2P(data, conn) {
 
 
     /* =====================================================
-       FOTO - INIZIO TRASFERIMENTO
+       PHOTO_START
     ===================================================== */
 
     if (data.tipo === "PHOTO_START") {
 
         if (
             !data.transferID ||
-            !data.photo ||
-            !data.nickname
+            !data.nickname ||
+            !data.photo
         ) {
+
             return;
         }
+
 
         photoTransfers.set(
             data.transferID,
             {
+
                 nickname:
                     data.nickname,
 
@@ -3593,6 +3604,7 @@ async function gestisciDatiP2P(data, conn) {
 
                 received:
                     0
+
             }
         );
 
@@ -3601,7 +3613,7 @@ async function gestisciDatiP2P(data, conn) {
 
 
     /* =====================================================
-       FOTO - BLOCCO
+       PHOTO_CHUNK
     ===================================================== */
 
     if (data.tipo === "PHOTO_CHUNK") {
@@ -3611,31 +3623,28 @@ async function gestisciDatiP2P(data, conn) {
                 data.transferID
             );
 
+
         if (!transfer) {
             return;
         }
+
 
         if (
             typeof data.index !== "number" ||
             typeof data.chunk !== "string"
         ) {
+
             return;
         }
 
-        /*
-            Evita di salvare due volte
-            lo stesso blocco.
-        */
 
         if (
-            typeof transfer.chunks[
-                data.index
-            ] === "undefined"
+            typeof transfer.chunks[data.index] ===
+            "undefined"
         ) {
 
-            transfer.chunks[
-                data.index
-            ] = data.chunk;
+            transfer.chunks[data.index] =
+                data.chunk;
 
             transfer.received += 1;
 
@@ -3646,7 +3655,7 @@ async function gestisciDatiP2P(data, conn) {
 
 
     /* =====================================================
-       FOTO - FINE TRASFERIMENTO
+       PHOTO_END
     ===================================================== */
 
     if (data.tipo === "PHOTO_END") {
@@ -3656,14 +3665,11 @@ async function gestisciDatiP2P(data, conn) {
                 data.transferID
             );
 
+
         if (!transfer) {
             return;
         }
 
-        /*
-            Controlliamo di avere
-            tutti i blocchi.
-        */
 
         if (
             transfer.received !==
@@ -3671,7 +3677,7 @@ async function gestisciDatiP2P(data, conn) {
         ) {
 
             console.warn(
-                "Foto incompleta:",
+                "Trasferimento foto incompleto:",
                 data.transferID
             );
 
@@ -3685,20 +3691,11 @@ async function gestisciDatiP2P(data, conn) {
 
         try {
 
-            /*
-                Salva l'immagine
-                nel database locale.
-            */
-
             await salvaFotoDB(
                 transfer.photo.id,
                 imageData
             );
 
-
-            /*
-                Crea l'utente se non esiste.
-            */
 
             if (
                 !users[transfer.nickname]
@@ -3732,10 +3729,6 @@ async function gestisciDatiP2P(data, conn) {
 
             }
 
-
-            /*
-                Evita duplicati.
-            */
 
             const giaPresente =
                 user.photos.some(
@@ -3775,14 +3768,11 @@ async function gestisciDatiP2P(data, conn) {
 
                 });
 
+
                 saveUsers();
 
             }
 
-
-            /*
-                Aggiorna interfaccia.
-            */
 
             updateHome();
             updateRanking();
@@ -3790,18 +3780,13 @@ async function gestisciDatiP2P(data, conn) {
             updateProfile();
 
 
-            /*
-                Aggiorna immediatamente
-                la schermata admin.
-            */
-
             aggiornaAdminFotoOverlay();
 
 
         } catch (error) {
 
             console.error(
-                "Errore ricostruzione foto:",
+                "Errore salvataggio foto ricevuta:",
                 error
             );
 
@@ -3815,196 +3800,6 @@ async function gestisciDatiP2P(data, conn) {
         return;
     }
 
-}
-/* =====================================================
-   FOTO RICEVUTA
-===================================================== */
-
-if (
-    data.tipo === "PHOTO"
-) {
-
-    if (
-        !data.eventID ||
-        !data.nickname ||
-        !data.photo ||
-        !data.image
-    ) {
-        return;
-    }
-
-    /*
-        Evita di ricevere due volte
-        la stessa foto.
-    */
-
-    if (
-        receivedMessages.has(
-            data.eventID
-        )
-    ) {
-        return;
-    }
-
-    receivedMessages.add(
-        data.eventID
-    );
-
-
-    /*
-        Crea utente se non esiste.
-    */
-
-    if (
-        !users[data.nickname]
-    ) {
-
-        users[data.nickname] = {
-
-            score: 0,
-
-            month:
-                getCurrentMonth(),
-
-            photos: []
-
-        };
-
-    }
-
-
-    const user =
-        users[data.nickname];
-
-
-    if (
-        !Array.isArray(
-            user.photos
-        )
-    ) {
-
-        user.photos = [];
-
-    }
-
-
-    /*
-        Controlla se la foto
-        esiste già.
-    */
-
-    const giaPresente =
-        user.photos.some(
-            function(photo) {
-
-                return (
-                    photo.id ===
-                    data.photo.id
-                );
-
-            }
-        );
-
-
-    /*
-        Salva immagine
-        in IndexedDB.
-    */
-
-    if (!giaPresente) {
-
-        try {
-
-            await salvaFotoDB(
-                data.photo.id,
-                data.image
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Errore salvataggio foto ricevuta:",
-                error
-            );
-
-            return;
-        }
-
-
-        /*
-            Salva dati foto.
-        */
-
-        user.photos.push({
-
-            id:
-                data.photo.id,
-
-            points:
-                Number(
-                    data.photo.points || 1
-                ),
-
-            date:
-                data.photo.date ||
-                new Date().toISOString(),
-
-            object:
-                data.photo.object ||
-                GAME_CONFIG.obiettivo.nome,
-
-            valid:
-                data.photo.valid !== false
-
-        });
-
-
-        saveUsers();
-
-    }
-
-
-    /*
-        La foto NON aggiunge un altro punto:
-        il punteggio viene già sincronizzato
-        dal messaggio POINT/SYNC.
-    */
-
-
-    updateHome();
-
-    updateRanking();
-
-    updateGallery();
-
-    updateProfile();
-
-
-    /*
-        Propaga la foto agli altri peer.
-    */
-
-    p2pConnections.forEach(
-        function(otherConn) {
-
-            if (
-                otherConn &&
-                otherConn !== conn &&
-                otherConn.open
-            ) {
-
-                inviaMessaggio(
-                    otherConn,
-                    data
-                );
-
-            }
-
-        }
-    );
-
-
-    return;
 }
 
     /* =====================================================
