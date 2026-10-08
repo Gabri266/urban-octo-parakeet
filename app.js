@@ -12,64 +12,59 @@ const GAME_CONFIG = {
     },
 
     livelli: [
-        {
-            nome: "Lattina distrutta dell'Iperal",
-            minimo: 5
-        },
-        {
-            nome: "LIVELLO 2",
-            minimo: 10
-        },
-        {
-            nome: "LIVELLO 3",
-            minimo: 20
-        },
-        {
-            nome: "LIVELLO 4",
-            minimo: 30
-        },
-        {
-            nome: "LIVELLO 5",
-            minimo: 40
-        },
-               {
-            nome: "LIVELLO 4",
-            minimo: 50
-        },
-        {
-            nome: "LIVELLO 4",
-            minimo: 60
-        },
-        {
-            nome: "LIVELLO 5",
-            minimo: 70
-        },
-        {
-            nome: "LIVELLO 4",
-            minimo: 80
-        },
-            
-               {
-            nome: "LIVELLO 4",
-            minimo: 90
-        },
-        {
-            nome: "LIVELLO 4",
-            minimo: 100
-        },
-        {
-            nome: "LIVELLO 5",
-            minimo: 120
-        },
-        {
-            nome: "LIVELLO 4",
-            minimo: 150
-        },
-        {
-            nome: "WTF Usi i trucchi",
-            minimo: 200
-        }
-    ],
+    {
+        nome: "🥫 Lattina distrutta dell'Iperal 🪚",
+        minimo: 5
+    },
+    {
+        nome: "🪵 Legno marcio 🦠",
+        minimo: 10
+    },
+    {
+        nome: "🏺 Reliquia sporca 🧹",
+        minimo: 20
+    },
+    {
+        nome: "🔧 Ladra di rame 💰",
+        minimo: 30
+    },
+    {
+        nome: "⛑️ Cappello in ferro ⚙️",
+        minimo: 40
+    },
+    {
+        nome: "🛡️ Protezioni in bronzo (color Colle) 🥉",
+        minimo: 50
+    },
+    {
+        nome: "🔥 7 argenti ardenti 🪙",
+        minimo: 60
+    },
+    {
+        nome: "⚔️ Spadone d'oro (ma veramente lungo) 🪙",
+        minimo: 70
+    },
+    {
+        nome: "💎 Gioielli di famiglia giganti di Rudeus 👑",
+        minimo: 80
+    },
+    {
+        nome: "💪 Tienilo duro 🗿",
+        minimo: 90
+    },
+    {
+        nome: "🪚 Mastro del Trucciolato 👑",
+        minimo: 100
+    },
+    {
+        nome: "🎵 Melody calda 🔥",
+        minimo: 120
+    },
+    {
+        nome: "🌿 Toccate l'erba o il Brembo 🌊",
+        minimo: 150
+    }
+],
 
     /*
         TRUE = modalità test.
