@@ -13,24 +13,61 @@ const GAME_CONFIG = {
 
     livelli: [
         {
-            nome: "LIVELLO 1",
-            minimo: 0
+            nome: "Lattina distrutta dell'Iperal",
+            minimo: 5
         },
         {
             nome: "LIVELLO 2",
-            minimo: 50
+            minimo: 10
         },
         {
             nome: "LIVELLO 3",
-            minimo: 100
+            minimo: 20
         },
         {
             nome: "LIVELLO 4",
-            minimo: 200
+            minimo: 30
         },
         {
             nome: "LIVELLO 5",
-            minimo: 500
+            minimo: 40
+        },
+               {
+            nome: "LIVELLO 4",
+            minimo: 50
+        },
+        {
+            nome: "LIVELLO 4",
+            minimo: 60
+        },
+        {
+            nome: "LIVELLO 5",
+            minimo: 70
+        },
+        {
+            nome: "LIVELLO 4",
+            minimo: 80
+        },
+            
+               {
+            nome: "LIVELLO 4",
+            minimo: 90
+        },
+        {
+            nome: "LIVELLO 4",
+            minimo: 100
+        },
+        {
+            nome: "LIVELLO 5",
+            minimo: 120
+        },
+        {
+            nome: "LIVELLO 4",
+            minimo: 150
+        },
+        {
+            nome: "WTF Usi i trucchi",
+            minimo: 200
         }
     ],
 
