@@ -475,16 +475,7 @@ async function caricaFotoDB(
 const deleteButton =
     document.createElement("button");
 
-deleteButton.textContent =
-    "🗑️ ELIMINA FOTO";
 
-deleteButton.style.width =
-    "100%";
-
-deleteButton.style.marginTop =
-    "8px";
-const deleteButton =
-    document.createElement("button");
 
 deleteButton.textContent =
     "🗑️ ELIMINA FOTO";
