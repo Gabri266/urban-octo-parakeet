@@ -163,7 +163,6 @@ function getCookie(name) {
     return null;
 }
 
-
 function setCookie(name, value, days) {
 
     const date =
