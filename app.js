@@ -1,6 +1,7 @@
 /* =========================================================
    CONFIGURAZIONE
 ========================================================= */
+
 console.log("SCRIPT.JS CARICATO CORRETTAMENTE");
 
 const GAME_CONFIG = {
@@ -35,10 +36,7 @@ const GAME_CONFIG = {
 
     /*
         TRUE = modalità test.
-        In modalità test ogni fotografia viene considerata valida.
-
-        Quando collegheremo il vero sistema di riconoscimento
-        immagini, basterà mettere false.
+        Ogni fotografia viene considerata valida.
     */
     modalitaTest: true
 
@@ -114,6 +112,8 @@ const adminPhotosButton =
 
 const adminConsoleButton =
     document.getElementById("adminConsoleButton");
+
+
 /* =========================================================
    CONTROLLO ELEMENTI
 ========================================================= */
@@ -191,27 +191,42 @@ function deleteCookie(name) {
    NICKNAME ATTUALE
 ========================================================= */
 
-let currentNickname = getCookie("nickname");
-let isAdmin = getCookie("isAdmin") === "1";
+let currentNickname =
+    getCookie("nickname");
+
+let isAdmin =
+    getCookie("isAdmin") === "1";
+
 
 function pulisciNickname(nickname) {
 
-    if (nickname.startsWith("!%")) {
-        return nickname.substring(2);
+    if (
+        typeof nickname === "string" &&
+        nickname.startsWith("!%")
+    ) {
+        return nickname.substring(2).trim();
     }
 
     return nickname;
 }
 
+
 function controllaAdmin(nickname) {
 
-    return nickname.startsWith("!%");
+    return (
+        typeof nickname === "string" &&
+        nickname.startsWith("!%")
+    );
+
 }
+
+
 /* =========================================================
    DATABASE LOCALE
 ========================================================= */
 
-let users = loadUsers();
+let users =
+    loadUsers();
 
 
 function loadUsers() {
@@ -230,7 +245,8 @@ function loadUsers() {
 
         if (
             typeof parsed !== "object" ||
-            parsed === null
+            parsed === null ||
+            Array.isArray(parsed)
         ) {
             return {};
         }
@@ -262,110 +278,261 @@ function saveUsers() {
     } catch (error) {
 
         console.error(
-            "Errore nel salvataggio:",
+            "Errore nel salvataggio degli utenti:",
             error
         );
 
     }
 
 }
+
+
 /* =========================================================
    DATABASE FOTO - INDEXEDDB
 ========================================================= */
 
-const PHOTO_DB_NAME = "PuntiPhotosDB";
-const PHOTO_STORE_NAME = "photos";
+const PHOTO_DB_NAME =
+    "PuntiPhotosDB";
+
+const PHOTO_STORE_NAME =
+    "photos";
+
 
 function openPhotoDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(PHOTO_DB_NAME, 1);
 
-        request.onupgradeneeded = function(event) {
-            const db = event.target.result;
+    return new Promise(
+        (resolve, reject) => {
 
-            if (!db.objectStoreNames.contains(PHOTO_STORE_NAME)) {
-                db.createObjectStore(PHOTO_STORE_NAME, {
-                    keyPath: "id"
-                });
+            if (!("indexedDB" in window)) {
+
+                reject(
+                    new Error(
+                        "IndexedDB non disponibile."
+                    )
+                );
+
+                return;
             }
-        };
 
-        request.onsuccess = function() {
-            resolve(request.result);
-        };
+            const request =
+                indexedDB.open(
+                    PHOTO_DB_NAME,
+                    1
+                );
 
-        request.onerror = function() {
-            reject(request.error);
-        };
-    });
+            request.onupgradeneeded =
+                function(event) {
+
+                    const db =
+                        event.target.result;
+
+                    if (
+                        !db.objectStoreNames.contains(
+                            PHOTO_STORE_NAME
+                        )
+                    ) {
+
+                        db.createObjectStore(
+                            PHOTO_STORE_NAME,
+                            {
+                                keyPath: "id"
+                            }
+                        );
+
+                    }
+
+                };
+
+
+            request.onsuccess =
+                function() {
+
+                    resolve(
+                        request.result
+                    );
+
+                };
+
+
+            request.onerror =
+                function() {
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
 }
 
-async function salvaFotoDB(photoId, imageData) {
-    const db = await openPhotoDB();
 
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(
-            PHOTO_STORE_NAME,
-            "readwrite"
-        );
+async function salvaFotoDB(
+    photoId,
+    imageData
+) {
 
-        const store = transaction.objectStore(PHOTO_STORE_NAME);
+    const db =
+        await openPhotoDB();
 
-        store.put({
-            id: photoId,
-            image: imageData
-        });
+    return new Promise(
+        (resolve, reject) => {
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-    });
+            const transaction =
+                db.transaction(
+                    PHOTO_STORE_NAME,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    PHOTO_STORE_NAME
+                );
+
+            store.put({
+                id: photoId,
+                image: imageData
+            });
+
+            transaction.oncomplete =
+                function() {
+
+                    db.close();
+                    resolve();
+
+                };
+
+            transaction.onerror =
+                function() {
+
+                    db.close();
+                    reject(
+                        transaction.error
+                    );
+
+                };
+
+        }
+    );
+
 }
 
-async function caricaFotoDB(photoId) {
-    const db = await openPhotoDB();
 
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(
-            PHOTO_STORE_NAME,
-            "readonly"
-        );
+async function caricaFotoDB(
+    photoId
+) {
 
-        const store = transaction.objectStore(PHOTO_STORE_NAME);
-        const request = store.get(photoId);
+    const db =
+        await openPhotoDB();
 
-        request.onsuccess = function() {
-            resolve(request.result ? request.result.image : null);
-        };
+    return new Promise(
+        (resolve, reject) => {
 
-        request.onerror = function() {
-            reject(request.error);
-        };
-    });
+            const transaction =
+                db.transaction(
+                    PHOTO_STORE_NAME,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(
+                    PHOTO_STORE_NAME
+                );
+
+            const request =
+                store.get(photoId);
+
+            request.onsuccess =
+                function() {
+
+                    db.close();
+
+                    resolve(
+                        request.result
+                            ? request.result.image
+                            : null
+                    );
+
+                };
+
+            request.onerror =
+                function() {
+
+                    db.close();
+
+                    reject(
+                        request.error
+                    );
+
+                };
+
+        }
+    );
+
 }
 
-async function eliminaFotoDB(photoId) {
-    const db = await openPhotoDB();
 
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction(
-            PHOTO_STORE_NAME,
-            "readwrite"
-        );
+async function eliminaFotoDB(
+    photoId
+) {
 
-        const store = transaction.objectStore(PHOTO_STORE_NAME);
+    const db =
+        await openPhotoDB();
 
-        store.delete(photoId);
+    return new Promise(
+        (resolve, reject) => {
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-    });
+            const transaction =
+                db.transaction(
+                    PHOTO_STORE_NAME,
+                    "readwrite"
+                );
+
+            const store =
+                transaction.objectStore(
+                    PHOTO_STORE_NAME
+                );
+
+            store.delete(
+                photoId
+            );
+
+            transaction.oncomplete =
+                function() {
+
+                    db.close();
+                    resolve();
+
+                };
+
+            transaction.onerror =
+                function() {
+
+                    db.close();
+
+                    reject(
+                        transaction.error
+                    );
+
+                };
+
+        }
+    );
+
 }
+
 
 /* =========================================================
    CREAZIONE UTENTE
 ========================================================= */
 
 function createUser(nickname) {
+
+    if (!nickname) {
+        return;
+    }
 
     if (!users[nickname]) {
 
@@ -381,6 +548,51 @@ function createUser(nickname) {
         };
 
         saveUsers();
+
+        return;
+    }
+
+    /*
+        Sistema eventuali dati vecchi/mancanti.
+    */
+
+    if (
+        typeof users[nickname] !== "object" ||
+        users[nickname] === null
+    ) {
+
+        users[nickname] = {
+
+            score: 0,
+
+            month:
+                getCurrentMonth(),
+
+            photos: []
+
+        };
+
+        saveUsers();
+
+        return;
+    }
+
+    if (
+        typeof users[nickname].score !== "number"
+    ) {
+
+        users[nickname].score = 0;
+
+    }
+
+    if (
+        !Array.isArray(
+            users[nickname].photos
+        )
+    ) {
+
+        users[nickname].photos = [];
+
     }
 
 }
@@ -418,26 +630,59 @@ function checkMonthlyReset() {
     let changed = false;
 
     Object.keys(users).forEach(
-        nickname => {
+        function(nickname) {
 
-            const user =
+            let user =
                 users[nickname];
 
-            if (!user) {
+            /*
+                Riparazione dati corrotti.
+            */
+
+            if (
+                !user ||
+                typeof user !== "object"
+            ) {
+
+                users[nickname] = {
+
+                    score: 0,
+
+                    month:
+                        currentMonth,
+
+                    photos: []
+
+                };
+
+                changed = true;
                 return;
             }
 
-            if (!Array.isArray(user.photos)) {
+
+            if (
+                !Array.isArray(
+                    user.photos
+                )
+            ) {
+
                 user.photos = [];
+
                 changed = true;
+
             }
+
 
             if (
                 typeof user.score !== "number"
             ) {
+
                 user.score = 0;
+
                 changed = true;
+
             }
+
 
             if (
                 user.month !== currentMonth
@@ -449,10 +694,12 @@ function checkMonthlyReset() {
                     currentMonth;
 
                 changed = true;
+
             }
 
         }
     );
+
 
     if (changed) {
         saveUsers();
@@ -467,53 +714,113 @@ function checkMonthlyReset() {
 
 function login() {
 
-    if (!nicknameInput) return;
+    if (!nicknameInput) {
+        return;
+    }
+
 
     const nicknameInserito =
         nicknameInput.value.trim();
 
-    if (nicknameInserito === "") {
+
+    /*
+        Controllo vuoto.
+    */
+
+    if (
+        nicknameInserito === ""
+    ) {
 
         if (loginError) {
+
             loginError.textContent =
                 "Inserisci un nickname.";
+
         }
 
         nicknameInput.focus();
+
         return;
     }
 
-    if (nicknameInserito.length > 22) {
 
-        if (loginError) {
-            loginError.textContent =
-                "Il nickname è troppo lungo.";
-        }
-
-        nicknameInput.focus();
-        return;
-    }
+    /*
+        Controllo ADMIN.
+        !%Gaciolas -> Gaciolas
+    */
 
     const admin =
-        nicknameInserito.startsWith("!%");
+        controllaAdmin(
+            nicknameInserito
+        );
+
 
     const nickname =
         admin
-            ? nicknameInserito.substring(2).trim()
+            ? pulisciNickname(
+                nicknameInserito
+            )
             : nicknameInserito;
 
-    if (nickname === "") {
+
+    /*
+        Controllo nickname vuoto
+        dopo !%.
+    */
+
+    if (
+        nickname === ""
+    ) {
 
         if (loginError) {
+
             loginError.textContent =
                 "Inserisci un nickname dopo !%.";
+
         }
+
+        nicknameInput.focus();
 
         return;
     }
 
-    currentNickname = nickname;
-    isAdmin = admin;
+
+    /*
+        Controllo lunghezza
+        sul nickname effettivo.
+    */
+
+    if (
+        nickname.length > 22
+    ) {
+
+        if (loginError) {
+
+            loginError.textContent =
+                "Il nickname è troppo lungo.";
+
+        }
+
+        nicknameInput.focus();
+
+        return;
+    }
+
+
+    /*
+        LOGIN
+    */
+
+    currentNickname =
+        nickname;
+
+    isAdmin =
+        admin;
+
+
+    /*
+        Salvataggio cookie.
+    */
 
     setCookie(
         "nickname",
@@ -523,51 +830,24 @@ function login() {
 
     setCookie(
         "isAdmin",
-        isAdmin ? "1" : "0",
+        isAdmin
+            ? "1"
+            : "0",
         365
     );
 
-    createUser(currentNickname);
-
-    if (loginError) {
-        loginError.textContent = "";
-    }
-
-    if (loginScreen) {
-        loginScreen.classList.add("hidden");
-    }
-
-    if (app) {
-        app.classList.remove("hidden");
-    }
-
-    initializeApplication();
-}
-   
-isAdmin = admin;
-
-setCookie(
-    "isAdmin",
-    admin ? "1" : "0",
-    365
-);
-    setCookie(
-        "nickname",
-        currentNickname,
-        365
-    );
 
     /*
-        Creiamo l'utente
-        se non esiste
+        Crea utente.
     */
 
     createUser(
         currentNickname
     );
 
+
     /*
-        Puliamo eventuale errore
+        Pulizia errore.
     */
 
     if (loginError) {
@@ -577,8 +857,9 @@ setCookie(
 
     }
 
+
     /*
-        Nascondi login
+        Nasconde login.
     */
 
     if (loginScreen) {
@@ -589,8 +870,9 @@ setCookie(
 
     }
 
+
     /*
-        Mostra app
+        Mostra app.
     */
 
     if (app) {
@@ -601,71 +883,10 @@ setCookie(
 
     }
 
-    /*
-        Avvio applicazione
-    */
-
-    initializeApplication();
-
-}
-
-setCookie(
-    "isAdmin",
-    admin ? "1" : "0",
-    365
-);
-    setCookie(
-        "nickname",
-        currentNickname,
-        365
-    );
 
     /*
-        Creiamo l'utente
-        se non esiste
-    */
-
-    createUser(
-        currentNickname
-    );
-
-    /*
-        Puliamo eventuale errore
-    */
-
-    if (loginError) {
-
-        loginError.textContent =
-            "";
-
-    }
-
-    /*
-        Nascondi login
-    */
-
-    if (loginScreen) {
-
-        loginScreen.classList.add(
-            "hidden"
-        );
-
-    }
-
-    /*
-        Mostra app
-    */
-
-    if (app) {
-
-        app.classList.remove(
-            "hidden"
-        );
-
-    }
-
-    /*
-        Avvio applicazione
+        Avvio applicazione.
+        Comprende anche il P2P.
     */
 
     initializeApplication();
@@ -691,9 +912,13 @@ if (nicknameInput) {
 
     nicknameInput.addEventListener(
         "keydown",
-        function (event) {
+        function(event) {
 
-            if (event.key === "Enter") {
+            if (
+                event.key === "Enter"
+            ) {
+
+                event.preventDefault();
 
                 login();
 
@@ -703,34 +928,65 @@ if (nicknameInput) {
     );
 
 }
+
+
+/* =========================================================
+   PROFILO
+========================================================= */
+
 function updateProfile() {
 
-    if (!currentNickname) return;
+    if (!currentNickname) {
+        return;
+    }
 
-    const user = users[currentNickname];
+    const user =
+        users[currentNickname];
 
-    if (!user) return;
+
+    if (!user) {
+        return;
+    }
+
 
     if (profileNickname) {
+
         profileNickname.textContent =
             currentNickname;
+
     }
 
+
     if (profileScore) {
+
         profileScore.textContent =
-            user.score;
+            Number(
+                user.score || 0
+            );
+
     }
+
 
     if (adminArea) {
 
         if (isAdmin) {
-            adminArea.classList.remove("hidden");
+
+            adminArea.classList.remove(
+                "hidden"
+            );
+
         } else {
-            adminArea.classList.add("hidden");
+
+            adminArea.classList.add(
+                "hidden"
+            );
+
         }
 
     }
+
 }
+
 
 /* =========================================================
    AVVIO APPLICAZIONE
@@ -742,6 +998,7 @@ function initializeApplication() {
         return;
     }
 
+
     createUser(
         currentNickname
     );
@@ -749,12 +1006,22 @@ function initializeApplication() {
 
     checkMonthlyReset();
 
+
     updateHome();
 
     updateRanking();
 
     updateGallery();
+
     updateProfile();
+
+
+    /*
+        Avvia il P2P dopo il login.
+    */
+
+    avviaP2P();
+
 }
 
 
@@ -768,12 +1035,15 @@ function updateHome() {
         return;
     }
 
+
     const user =
         users[currentNickname];
+
 
     if (!user) {
         return;
     }
+
 
     if (nicknameDisplay) {
 
@@ -782,17 +1052,25 @@ function updateHome() {
 
     }
 
+
     if (scoreDisplay) {
 
         scoreDisplay.textContent =
-            user.score;
+            Number(
+                user.score || 0
+            );
 
     }
+
 
     if (levelDisplay) {
 
         levelDisplay.textContent =
-            getLevel(user.score);
+            getLevel(
+                Number(
+                    user.score || 0
+                )
+            );
 
     }
 
@@ -808,13 +1086,15 @@ function getLevel(score) {
     let selectedLevel =
         GAME_CONFIG.livelli[0];
 
+
     for (
         const level
         of GAME_CONFIG.livelli
     ) {
 
         if (
-            score >= level.minimo
+            score >=
+            level.minimo
         ) {
 
             selectedLevel =
@@ -824,20 +1104,27 @@ function getLevel(score) {
 
     }
 
+
     return selectedLevel.nome;
 
 }
 
 
 /* =========================================================
-   AGGIUNGI FOTO
+   PULSANTE AGGIUNGI
 ========================================================= */
 
 if (addButton) {
 
     addButton.addEventListener(
         "click",
-        function () {
+        function() {
+
+            if (!currentNickname) {
+
+                return;
+            }
+
 
             if (cameraInput) {
 
@@ -874,14 +1161,16 @@ async function handlePhoto(event) {
     const file =
         event.target.files[0];
 
+
     if (!file) {
         return;
     }
 
-    if (!currentNickname) {
 
+    if (!currentNickname) {
         return;
     }
+
 
     if (statusMessage) {
 
@@ -890,13 +1179,21 @@ async function handlePhoto(event) {
 
     }
 
+
     try {
 
+        /*
+            File -> Data URL
+        */
+
         const imageData =
-            await fileToDataURL(file);
+            await fileToDataURL(
+                file
+            );
+
 
         /*
-            Mostra anteprima
+            Anteprima.
         */
 
         if (previewImage) {
@@ -906,12 +1203,18 @@ async function handlePhoto(event) {
 
         }
 
+
         if (verificationResult) {
 
             verificationResult.innerHTML =
                 "";
 
         }
+
+
+        /*
+            Apre modale.
+        */
 
         if (photoModal) {
 
@@ -921,20 +1224,24 @@ async function handlePhoto(event) {
 
         }
 
+
         /*
-            Verifica fotografia
+            Verifica fotografia.
         */
 
         const result =
-            await verificaFoto(file);
+            await verificaFoto(
+                file
+            );
+
 
         /*
-            Se riconosciuta
+            Foto valida.
         */
 
         if (result.trovato) {
 
-            addPoint(
+            await addPoint(
                 imageData
             );
 
@@ -950,6 +1257,7 @@ async function handlePhoto(event) {
             "Errore durante la gestione della foto:",
             error
         );
+
 
         if (verificationResult) {
 
@@ -973,6 +1281,7 @@ async function handlePhoto(event) {
 
         }
 
+
         if (cameraInput) {
 
             cameraInput.value =
@@ -986,19 +1295,20 @@ async function handlePhoto(event) {
 
 
 /* =========================================================
-   FILE → DATA URL
+   FILE -> DATA URL
 ========================================================= */
 
 function fileToDataURL(file) {
 
     return new Promise(
-        (resolve, reject) => {
+        function(resolve, reject) {
 
             const reader =
                 new FileReader();
 
+
             reader.onload =
-                function () {
+                function() {
 
                     resolve(
                         reader.result
@@ -1006,8 +1316,9 @@ function fileToDataURL(file) {
 
                 };
 
+
             reader.onerror =
-                function () {
+                function() {
 
                     reject(
                         new Error(
@@ -1016,6 +1327,7 @@ function fileToDataURL(file) {
                     );
 
                 };
+
 
             reader.readAsDataURL(
                 file
@@ -1043,23 +1355,9 @@ async function verificaFoto(file) {
         GAME_CONFIG.modalitaTest
     );
 
+
     /*
         MODALITÀ TEST
-
-        Per ora accettiamo qualsiasi immagine.
-        Questo permette di verificare che:
-
-        FOTO →
-        MODALE →
-        PUNTI →
-        CLASSIFICA →
-        GALLERIA
-
-        funzionino.
-
-        Successivamente questa funzione verrà
-        sostituita con il vero riconoscimento
-        dell'immagine.
     */
 
     if (
@@ -1076,8 +1374,9 @@ async function verificaFoto(file) {
 
     }
 
+
     /*
-        Qui andrà il vero sistema AI.
+        Futuro sistema AI.
     */
 
     return {
@@ -1101,6 +1400,7 @@ function showVerificationFailed() {
         return;
     }
 
+
     verificationResult.innerHTML = `
 
         <div class="verification-fail">
@@ -1117,55 +1417,152 @@ function showVerificationFailed() {
 
 
 /* =========================================================
-   AGGIUNTA PUNTI
+   AGGIUNTA PUNTO
 ========================================================= */
 
 async function addPoint(imageData) {
-    if (!currentNickname) return;
 
-    const user = users[currentNickname];
+    if (!currentNickname) {
+        return;
+    }
 
-    if (!user) return;
+
+    const user =
+        users[currentNickname];
+
+
+    if (!user) {
+        return;
+    }
+
+
+    /*
+        Protezione dati vecchi.
+    */
+
+    if (
+        !Array.isArray(
+            user.photos
+        )
+    ) {
+
+        user.photos = [];
+
+    }
+
 
     const points = 1;
+
+
+    /*
+        ID univoco della foto.
+    */
 
     const photoId =
         currentNickname +
         "_" +
         Date.now() +
         "_" +
-        Math.random().toString(36).substring(2, 9);
+        Math.random()
+            .toString(36)
+            .substring(2, 9);
+
 
     try {
-        await salvaFotoDB(photoId, imageData);
+
+        /*
+            Prima salviamo fisicamente
+            la foto in IndexedDB.
+        */
+
+        await salvaFotoDB(
+            photoId,
+            imageData
+        );
+
+
+        /*
+            Aggiungiamo il punto.
+        */
 
         user.score += points;
 
+
+        /*
+            Salviamo i dati della foto
+            in localStorage.
+        */
+
         user.photos.push({
-            id: photoId,
-            points: points,
-            date: new Date().toISOString(),
-            object: GAME_CONFIG.obiettivo.nome,
-            valid: true
+
+            id:
+                photoId,
+
+            points:
+                points,
+
+            date:
+                new Date().toISOString(),
+
+            object:
+                GAME_CONFIG.obiettivo.nome,
+
+            valid:
+                true
+
         });
+
 
         saveUsers();
 
-        if (typeof inviaAggiornamentoP2P === "function") {
-            inviaAggiornamentoP2P(user);
+
+        /*
+            Aggiornamento P2P.
+        */
+
+        if (
+            typeof inviaAggiornamentoP2P ===
+            "function"
+        ) {
+
+            inviaAggiornamentoP2P(
+                user
+            );
+
         }
 
+
+        /*
+            Aggiornamento interfaccia.
+        */
+
         updateHome();
+
         updateRanking();
+
         updateGallery();
 
+        updateProfile();
+
+
+        /*
+            Risultato.
+        */
+
         if (verificationResult) {
+
             verificationResult.innerHTML = `
+
                 <div class="verification-success">
                     ✓ Oggetto riconosciuto
                 </div>
-                <p>+1 punto</p>
+
+                <p>
+                    +1 punto
+                </p>
+
             `;
+
         }
 
     } catch (error) {
@@ -1175,14 +1572,21 @@ async function addPoint(imageData) {
             error
         );
 
+
         if (verificationResult) {
+
             verificationResult.innerHTML = `
+
                 <div class="verification-fail">
                     ✕ Errore salvataggio foto
                 </div>
+
             `;
+
         }
+
     }
+
 }
 
 
@@ -1196,16 +1600,30 @@ function updateRanking() {
         return;
     }
 
+
     rankingContainer.innerHTML =
         "";
 
+
     const ranking =
         Object.keys(users)
+            .filter(
+                function(nickname) {
+
+                    return (
+                        users[nickname] &&
+                        typeof users[nickname] ===
+                        "object"
+                    );
+
+                }
+            )
             .map(
-                nickname => {
+                function(nickname) {
 
                     const user =
                         users[nickname];
+
 
                     return {
 
@@ -1222,15 +1640,24 @@ function updateRanking() {
                 }
             )
             .sort(
-                (a, b) =>
-                    b.score - a.score
+                function(a, b) {
+
+                    return (
+                        b.score -
+                        a.score
+                    );
+
+                }
             );
 
+
     /*
-        Se non ci sono utenti
+        Nessun utente.
     */
 
-    if (ranking.length === 0) {
+    if (
+        ranking.length === 0
+    ) {
 
         rankingContainer.innerHTML = `
 
@@ -1243,54 +1670,67 @@ function updateRanking() {
         return;
     }
 
+
     /*
-        Creiamo una classifica
-        semplice e ordinata
+        Creazione classifica.
     */
 
     ranking.forEach(
-        (user, index) => {
+        function(user, index) {
 
             const row =
                 document.createElement(
                     "div"
                 );
 
+
             row.className =
                 "ranking-item";
+
 
             const position =
                 document.createElement(
                     "span"
                 );
 
+
             position.className =
                 "ranking-position";
 
+
             position.textContent =
-                "#" + (index + 1);
+                "#" +
+                (index + 1);
+
 
             const name =
                 document.createElement(
                     "span"
                 );
 
+
             name.className =
                 "ranking-name";
 
+
             name.textContent =
                 user.nickname;
+
 
             const score =
                 document.createElement(
                     "span"
                 );
 
+
             score.className =
                 "ranking-score";
 
+
             score.textContent =
-                user.score + " pt";
+                user.score +
+                " pt";
+
 
             row.appendChild(
                 position
@@ -1303,6 +1743,7 @@ function updateRanking() {
             row.appendChild(
                 score
             );
+
 
             rankingContainer.appendChild(
                 row
@@ -1320,54 +1761,110 @@ function updateRanking() {
 
 async function updateGallery() {
 
-    if (!gallery) return;
+    if (!gallery) {
+        return;
+    }
 
-    gallery.innerHTML = "";
 
-    if (!currentNickname) return;
+    gallery.innerHTML =
+        "";
 
-    const user = users[currentNickname];
 
-    if (!user) return;
+    if (!currentNickname) {
+        return;
+    }
 
-    const photos = Array.isArray(user.photos)
-        ? user.photos
-        : [];
 
-    if (photos.length === 0) {
+    const user =
+        users[currentNickname];
+
+
+    if (!user) {
+        return;
+    }
+
+
+    const photos =
+        Array.isArray(user.photos)
+            ? user.photos
+            : [];
+
+
+    /*
+        Nessuna foto.
+    */
+
+    if (
+        photos.length === 0
+    ) {
 
         gallery.innerHTML = `
+
             <p class="empty-gallery">
                 Non hai ancora nessun reperto.
             </p>
+
         `;
 
         return;
     }
 
-    const reversedPhotos = [...photos].reverse();
 
-    for (const photo of reversedPhotos) {
+    /*
+        Più recente prima.
+    */
 
-        const item = document.createElement("div");
+    const reversedPhotos =
+        [...photos].reverse();
 
-        item.className = "gallery-item";
 
-        const image = document.createElement("img");
+    for (
+        const photo
+        of reversedPhotos
+    ) {
 
-        image.alt = "Reperto";
+        const item =
+            document.createElement(
+                "div"
+            );
 
-        image.className = "gallery-photo";
+
+        item.className =
+            "gallery-item";
+
+
+        const image =
+            document.createElement(
+                "img"
+            );
+
+
+        image.alt =
+            "Reperto";
+
+
+        image.className =
+            "gallery-photo";
+
 
         try {
 
             const imageData =
-                await caricaFotoDB(photo.id);
+                await caricaFotoDB(
+                    photo.id
+                );
+
 
             if (imageData) {
-                image.src = imageData;
+
+                image.src =
+                    imageData;
+
             } else {
-                image.alt = "Foto non disponibile";
+
+                image.alt =
+                    "Foto non disponibile";
+
             }
 
         } catch (error) {
@@ -1377,21 +1874,43 @@ async function updateGallery() {
                 error
             );
 
+            image.alt =
+                "Foto non disponibile";
+
         }
 
-        const info = document.createElement("div");
 
-        info.className = "gallery-info";
+        const info =
+            document.createElement(
+                "div"
+            );
+
+
+        info.className =
+            "gallery-info";
+
 
         info.textContent =
-            `+${photo.points} punto • ${photo.object}`;
+            `+${Number(photo.points || 1)} punto • ${photo.object || GAME_CONFIG.obiettivo.nome}`;
 
-        item.appendChild(image);
-        item.appendChild(info);
 
-        gallery.appendChild(item);
+        item.appendChild(
+            image
+        );
+
+        item.appendChild(
+            info
+        );
+
+
+        gallery.appendChild(
+            item
+        );
+
     }
+
 }
+
 
 /* =========================================================
    NAVIGAZIONE
@@ -1404,27 +1923,32 @@ const navButtons =
 
 
 navButtons.forEach(
-    button => {
+    function(button) {
 
         button.addEventListener(
             "click",
-            function () {
+            function() {
 
                 const pageID =
                     button.dataset.page;
+
 
                 if (!pageID) {
                     return;
                 }
 
+
                 /*
-                    Nascondi tutte le pagine
+                    Nascondi tutte
+                    le pagine.
                 */
 
                 document
-                    .querySelectorAll(".page")
+                    .querySelectorAll(
+                        ".page"
+                    )
                     .forEach(
-                        page => {
+                        function(page) {
 
                             page.classList.remove(
                                 "active"
@@ -1433,14 +1957,16 @@ navButtons.forEach(
                         }
                     );
 
+
                 /*
-                    Mostra pagina selezionata
+                    Mostra pagina scelta.
                 */
 
                 const selectedPage =
                     document.getElementById(
                         pageID
                     );
+
 
                 if (selectedPage) {
 
@@ -1450,12 +1976,13 @@ navButtons.forEach(
 
                 }
 
+
                 /*
-                    Aggiorna pulsanti
+                    Aggiorna pulsanti.
                 */
 
                 navButtons.forEach(
-                    btn => {
+                    function(btn) {
 
                         btn.classList.remove(
                             "active"
@@ -1464,9 +1991,25 @@ navButtons.forEach(
                     }
                 );
 
+
                 button.classList.add(
                     "active"
                 );
+
+
+                /*
+                    Aggiorna profilo
+                    quando viene aperto.
+                */
+
+                if (
+                    pageID ===
+                    "profilePage"
+                ) {
+
+                    updateProfile();
+
+                }
 
             }
         );
@@ -1483,7 +2026,7 @@ if (closeModal) {
 
     closeModal.addEventListener(
         "click",
-        function () {
+        function() {
 
             if (photoModal) {
 
@@ -1507,7 +2050,7 @@ if (photoModal) {
 
     photoModal.addEventListener(
         "click",
-        function (event) {
+        function(event) {
 
             if (
                 event.target ===
@@ -1527,65 +2070,99 @@ if (photoModal) {
 
 
 /* =========================================================
-   INIZIALIZZAZIONE LOGIN
+   LOGIN AUTOMATICO DA COOKIE
 ========================================================= */
 
 function initializeLoginScreen() {
 
-    const savedNickname = getCookie("nickname");
+    const savedNickname =
+        getCookie("nickname");
+
 
     if (savedNickname) {
 
-        currentNickname = savedNickname;
+        currentNickname =
+            savedNickname;
 
-        isAdmin = getCookie("isAdmin") === "1";
+        isAdmin =
+            getCookie("isAdmin") === "1";
 
-        createUser(currentNickname);
+
+        createUser(
+            currentNickname
+        );
+
 
         if (loginScreen) {
-            loginScreen.classList.add("hidden");
+
+            loginScreen.classList.add(
+                "hidden"
+            );
+
         }
 
+
         if (app) {
-            app.classList.remove("hidden");
+
+            app.classList.remove(
+                "hidden"
+            );
+
         }
+
 
         initializeApplication();
 
         return;
     }
 
+
+    /*
+        Nessun login salvato.
+    */
+
     if (loginScreen) {
-        loginScreen.classList.remove("hidden");
+
+        loginScreen.classList.remove(
+            "hidden"
+        );
+
     }
+
 
     if (app) {
-        app.classList.add("hidden");
+
+        app.classList.add(
+            "hidden"
+        );
+
     }
+
 }
-/* =========================================================
-   RETE P2P - PEERJS
-========================================================= */
+
 
 /* =========================================================
    RETE P2P - PEERJS
 ========================================================= */
 
-/* =========================================================
-   RETE P2P - PEERJS
-========================================================= */
-/* =========================================================
-   RETE P2P - PEERJS
-   ID STABILE LEGATO AL NICKNAME
-========================================================= */
+let peer =
+    null;
 
-let peer = null;
-let p2pConnections = [];
 
-let knownPeers = {};
-let receivedMessages = new Set();
+let p2pConnections =
+    [];
 
-let reconnectTimer = null;
+
+let knownPeers =
+    {};
+
+
+let receivedMessages =
+    new Set();
+
+
+let reconnectTimer =
+    null;
 
 
 /* =========================================================
@@ -1593,19 +2170,6 @@ let reconnectTimer = null;
 ========================================================= */
 
 function creaPeerID(nickname) {
-
-    /*
-        Trasforma il nickname in un ID stabile.
-
-        Esempio:
-
-        Gabriele
-        ↓
-        punti-gabriele
-
-        Quindi ad ogni refresh
-        viene usato sempre lo stesso ID.
-    */
 
     const pulito =
         nickname
@@ -1629,10 +2193,12 @@ function creaPeerID(nickname) {
                 ""
             );
 
+
     return (
         "punti-" +
         pulito
     );
+
 }
 
 
@@ -1644,13 +2210,42 @@ function caricaPeerSalvati() {
 
     try {
 
-        return JSON.parse(
+        const saved =
             localStorage.getItem(
                 "knownPeers"
-            ) || "{}"
-        );
+            );
+
+
+        if (!saved) {
+            return {};
+        }
+
+
+        const parsed =
+            JSON.parse(
+                saved
+            );
+
+
+        if (
+            typeof parsed !== "object" ||
+            parsed === null ||
+            Array.isArray(parsed)
+        ) {
+
+            return {};
+
+        }
+
+
+        return parsed;
 
     } catch (error) {
+
+        console.error(
+            "Errore knownPeers:",
+            error
+        );
 
         return {};
 
@@ -1661,12 +2256,23 @@ function caricaPeerSalvati() {
 
 function salvaPeerSalvati() {
 
-    localStorage.setItem(
-        "knownPeers",
-        JSON.stringify(
-            knownPeers
-        )
-    );
+    try {
+
+        localStorage.setItem(
+            "knownPeers",
+            JSON.stringify(
+                knownPeers
+            )
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Errore salvataggio peer:",
+            error
+        );
+
+    }
 
 }
 
@@ -1680,12 +2286,18 @@ function salvaPeer(
     peerID
 ) {
 
-    if (!nickname || !peerID) {
+    if (
+        !nickname ||
+        !peerID
+    ) {
+
         return;
     }
 
+
     knownPeers[nickname] =
         peerID;
+
 
     salvaPeerSalvati();
 
@@ -1719,7 +2331,7 @@ function avviaP2P() {
     if (!currentNickname) {
 
         console.log(
-            "Nessun nickname."
+            "Nessun nickname: P2P non avviato."
         );
 
         return;
@@ -1732,7 +2344,7 @@ function avviaP2P() {
 
 
     /*
-        CREA ID STABILE
+        ID stabile basato sul nickname.
     */
 
     const mioPeerID =
@@ -1746,6 +2358,7 @@ function avviaP2P() {
         currentNickname
     );
 
+
     console.log(
         "Peer ID stabile:",
         mioPeerID
@@ -1758,28 +2371,56 @@ function avviaP2P() {
 
 
     /*
-        Se esiste già un Peer
-        lo chiudiamo.
+        Chiudi peer precedente.
     */
 
     if (peer) {
 
         try {
+
             peer.destroy();
-        } catch (error) {}
+
+        } catch (error) {
+
+            console.error(
+                "Errore chiusura peer precedente:",
+                error
+            );
+
+        }
 
     }
 
 
+    p2pConnections =
+        [];
+
+
     /*
-        CREIAMO IL PEER
-        CON ID STABILE
+        Crea peer con ID stabile.
     */
 
-    peer =
-        new Peer(
-            mioPeerID
+    try {
+
+        peer =
+            new Peer(
+                mioPeerID
+            );
+
+    } catch (error) {
+
+        console.error(
+            "Errore creazione PeerJS:",
+            error
         );
+
+        aggiornaStatoP2P(
+            "🔴 Errore PeerJS"
+        );
+
+        return;
+
+    }
 
 
     /* =====================================================
@@ -1795,10 +2436,6 @@ function avviaP2P() {
                 id
             );
 
-
-            /*
-                Mostra il tuo ID
-            */
 
             const idElement =
                 document.getElementById(
@@ -1820,15 +2457,14 @@ function avviaP2P() {
 
 
             /*
-                Collegamento automatico
-                ai peer già conosciuti
+                Collegamento automatico.
             */
 
             collegaPeerSalvati();
 
 
             /*
-                Controllo ogni 2 secondi
+                Controllo ogni 2 secondi.
             */
 
             avviaControlloP2P();
@@ -1838,7 +2474,7 @@ function avviaP2P() {
 
 
     /* =====================================================
-       QUALCUNO SI COLLEGA A NOI
+       QUALCUNO SI COLLEGA
     ===================================================== */
 
     peer.on(
@@ -1854,7 +2490,7 @@ function avviaP2P() {
 
 
     /* =====================================================
-       ERRORE
+       ERRORE PEER
     ===================================================== */
 
     peer.on(
@@ -1868,21 +2504,16 @@ function avviaP2P() {
 
 
             if (
+                error &&
                 error.type ===
                 "unavailable-id"
             ) {
-
-                /*
-                    Lo stesso nickname/ID
-                    è già aperto altrove.
-                */
 
                 aggiornaStatoP2P(
                     "⚠️ Questo nickname è già connesso"
                 );
 
                 return;
-
             }
 
 
@@ -1893,6 +2524,10 @@ function avviaP2P() {
         }
     );
 
+
+    /* =====================================================
+       PEER DISCONNESSO
+    ===================================================== */
 
     peer.on(
         "disconnected",
@@ -1908,17 +2543,12 @@ function avviaP2P() {
             );
 
 
-            /*
-                Proviamo a ricollegare
-                lo stesso Peer ID.
-            */
-
             setTimeout(
                 function() {
 
                     if (
                         peer &&
-                        peer.destroyed === false
+                        !peer.destroyed
                     ) {
 
                         try {
@@ -1928,6 +2558,7 @@ function avviaP2P() {
                         } catch (error) {
 
                             console.error(
+                                "Errore reconnect:",
                                 error
                             );
 
@@ -1956,6 +2587,14 @@ function collegaPeerSalvati() {
     }
 
 
+    if (
+        peer.destroyed
+    ) {
+
+        return;
+    }
+
+
     Object.keys(
         knownPeers
     ).forEach(
@@ -1973,7 +2612,7 @@ function collegaPeerSalvati() {
 
 
             /*
-                Non collegarsi a se stessi
+                Non collegarsi a se stessi.
             */
 
             if (
@@ -1987,7 +2626,7 @@ function collegaPeerSalvati() {
 
 
             /*
-                Controlliamo se è già connesso
+                Controllo duplicati.
             */
 
             const giaConnesso =
@@ -1995,9 +2634,9 @@ function collegaPeerSalvati() {
                     function(conn) {
 
                         return (
+                            conn &&
                             conn.peer ===
-                            peerID
-                            &&
+                            peerID &&
                             conn.open
                         );
 
@@ -2071,7 +2710,7 @@ function configuraConnessione(
 
 
             /*
-                Evita duplicati
+                Evita duplicati.
             */
 
             const esistente =
@@ -2079,6 +2718,7 @@ function configuraConnessione(
                     function(c) {
 
                         return (
+                            c &&
                             c.peer ===
                             conn.peer
                         );
@@ -2105,13 +2745,13 @@ function configuraConnessione(
 
 
             /*
-                Prima cosa:
-                ci presentiamo.
+                HELLO
             */
 
             inviaMessaggio(
                 conn,
                 {
+
                     tipo:
                         "HELLO",
 
@@ -2119,13 +2759,16 @@ function configuraConnessione(
                         currentNickname,
 
                     peerID:
-                        peer.id
+                        peer
+                            ? peer.id
+                            : null
+
                 }
             );
 
 
             /*
-                Poi mandiamo la classifica.
+                SYNC
             */
 
             inviaDatiCompleti(
@@ -2157,7 +2800,9 @@ function configuraConnessione(
                 p2pConnections.filter(
                     function(c) {
 
-                        return c !== conn;
+                        return (
+                            c !== conn
+                        );
 
                     }
                 );
@@ -2222,7 +2867,7 @@ function inviaMessaggio(
 
 
 /* =========================================================
-   HELLO / SINCRONIZZAZIONE PEER
+   GESTIONE DATI P2P
 ========================================================= */
 
 function gestisciDatiP2P(
@@ -2254,14 +2899,10 @@ function gestisciDatiP2P(
                 data.peerID
             );
 
+            aggiornaListaPeer();
+
         }
 
-
-        /*
-            Ora che conosciamo il peer,
-            possiamo provare a collegarci
-            automaticamente in futuro.
-        */
 
         return;
 
@@ -2283,12 +2924,13 @@ function gestisciDatiP2P(
 
 
         /*
-            Riceviamo anche gli altri peer
-            conosciuti dal dispositivo.
+            Riceviamo i peer conosciuti.
         */
 
         if (
-            data.peers
+            data.peers &&
+            typeof data.peers ===
+            "object"
         ) {
 
             Object.keys(
@@ -2317,8 +2959,8 @@ function gestisciDatiP2P(
 
 
         /*
-            Proviamo a collegarci
-            agli altri.
+            Prova a collegarsi
+            agli altri peer.
         */
 
         collegaPeerSalvati();
@@ -2338,8 +2980,7 @@ function gestisciDatiP2P(
     ) {
 
         /*
-            Evita di applicare
-            due volte lo stesso punto.
+            Event ID obbligatorio.
         */
 
         if (
@@ -2350,6 +2991,10 @@ function gestisciDatiP2P(
 
         }
 
+
+        /*
+            Evita doppio conteggio.
+        */
 
         if (
             receivedMessages.has(
@@ -2377,7 +3022,7 @@ function gestisciDatiP2P(
 
 
         /*
-            Crea utente se non esiste
+            Crea utente se non esiste.
         */
 
         if (
@@ -2386,14 +3031,12 @@ function gestisciDatiP2P(
 
             users[nickname] = {
 
-                score:
-                    0,
+                score: 0,
 
                 month:
                     getCurrentMonth(),
 
-                photos:
-                    []
+                photos: []
 
             };
 
@@ -2401,7 +3044,32 @@ function gestisciDatiP2P(
 
 
         /*
-            Aggiunge ESATTAMENTE 1 punto
+            Assicura struttura corretta.
+        */
+
+        if (
+            typeof users[nickname].score !==
+            "number"
+        ) {
+
+            users[nickname].score = 0;
+
+        }
+
+
+        if (
+            !Array.isArray(
+                users[nickname].photos
+            )
+        ) {
+
+            users[nickname].photos = [];
+
+        }
+
+
+        /*
+            ESATTAMENTE +1
         */
 
         users[nickname].score += 1;
@@ -2416,16 +3084,18 @@ function gestisciDatiP2P(
 
         updateGallery();
 
+        updateProfile();
+
 
         /*
-            Propaga agli altri peer,
-            escluso quello da cui è arrivato.
+            Propaga il messaggio.
         */
 
         p2pConnections.forEach(
             function(otherConn) {
 
                 if (
+                    otherConn &&
                     otherConn !== conn &&
                     otherConn.open
                 ) {
@@ -2449,12 +3119,17 @@ function gestisciDatiP2P(
 
 
 /* =========================================================
-   INVIA SYNC
+   INVIA SYNC COMPLETO
 ========================================================= */
 
 function inviaDatiCompleti(
     conn
 ) {
+
+    if (!conn) {
+        return;
+    }
+
 
     const utenti =
         {};
@@ -2467,6 +3142,17 @@ function inviaDatiCompleti(
 
             const user =
                 users[nickname];
+
+
+            if (
+                !user ||
+                typeof user !==
+                "object"
+            ) {
+
+                return;
+
+            }
 
 
             utenti[nickname] = {
@@ -2517,33 +3203,63 @@ function inviaDatiCompleti(
    SINCRONIZZA UTENTI
 ========================================================= */
 
-function sincronizzaUtenti(utentiRicevuti) {
+function sincronizzaUtenti(
+    utentiRicevuti
+) {
 
-    if (!utentiRicevuti) {
+    if (
+        !utentiRicevuti ||
+        typeof utentiRicevuti !==
+        "object"
+    ) {
+
         return;
     }
 
-    let modificato = false;
 
-    Object.keys(utentiRicevuti).forEach(
+    let modificato =
+        false;
+
+
+    Object.keys(
+        utentiRicevuti
+    ).forEach(
         function(nickname) {
 
             const remoto =
                 utentiRicevuti[nickname];
 
+
+            if (
+                !remoto ||
+                typeof remoto !==
+                "object"
+            ) {
+
+                return;
+
+            }
+
+
+            const remotoScore =
+                Number(
+                    remoto.score || 0
+                );
+
+
             /*
-                Se l'utente non esiste localmente,
-                lo creiamo.
+                Se l'utente non esiste
+                localmente lo creiamo.
             */
 
-            if (!users[nickname]) {
+            if (
+                !users[nickname]
+            ) {
 
                 users[nickname] = {
 
                     score:
-                        Number(
-                            remoto.score || 0
-                        ),
+                        remotoScore,
 
                     month:
                         remoto.month ||
@@ -2554,41 +3270,74 @@ function sincronizzaUtenti(utentiRicevuti) {
 
                 };
 
-                modificato = true;
+
+                modificato =
+                    true;
+
 
                 return;
             }
 
-            /*
-                L'utente esiste già.
 
-                NON sostituiamo mai il suo punteggio
-                con uno più basso.
+            /*
+                Ripristina struttura
+                se necessario.
             */
+
+            if (
+                !Array.isArray(
+                    users[nickname].photos
+                )
+            ) {
+
+                users[nickname].photos = [];
+
+                modificato =
+                    true;
+
+            }
+
+
+            if (
+                typeof users[nickname].score !==
+                "number"
+            ) {
+
+                users[nickname].score = 0;
+
+                modificato =
+                    true;
+
+            }
+
 
             const locale =
                 Number(
                     users[nickname].score || 0
                 );
 
-            const remotoScore =
-                Number(
-                    remoto.score || 0
-                );
 
-            if (remotoScore > locale) {
+            /*
+                Non sostituiamo
+                un punteggio alto con uno basso.
+            */
+
+            if (
+                remotoScore >
+                locale
+            ) {
 
                 users[nickname].score =
                     remotoScore;
 
-                modificato = true;
+                modificato =
+                    true;
+
             }
+
         }
     );
 
-    /*
-        Salviamo SOLO se qualcosa è cambiato.
-    */
 
     if (modificato) {
 
@@ -2596,14 +3345,15 @@ function sincronizzaUtenti(utentiRicevuti) {
 
     }
 
-    /*
-        In ogni caso aggiorniamo la classifica
-        usando i dati LOCALI.
-    */
 
     updateHome();
+
     updateRanking();
+
     updateGallery();
+
+    updateProfile();
+
 }
 
 
@@ -2621,7 +3371,6 @@ function inviaAggiornamentoP2P(
     ) {
 
         return;
-
     }
 
 
@@ -2636,8 +3385,8 @@ function inviaAggiornamentoP2P(
 
 
     /*
-        Lo segniamo come già ricevuto
-        sul nostro dispositivo.
+        Segna il messaggio
+        come già ricevuto localmente.
     */
 
     receivedMessages.add(
@@ -2658,6 +3407,10 @@ function inviaAggiornamentoP2P(
 
     };
 
+
+    /*
+        Invia a tutti i peer.
+    */
 
     p2pConnections.forEach(
         function(conn) {
@@ -2699,18 +3452,30 @@ function avviaControlloP2P() {
         setInterval(
             function() {
 
-                if (!peer) {
+                if (
+                    !peer
+                ) {
+
                     return;
+
+                }
+
+
+                if (
+                    peer.destroyed
+                ) {
+
+                    return;
+
                 }
 
 
                 /*
-                    Peer disconnesso
+                    Peer disconnesso.
                 */
 
                 if (
-                    peer.disconnected &&
-                    !peer.destroyed
+                    peer.disconnected
                 ) {
 
                     try {
@@ -2720,6 +3485,7 @@ function avviaControlloP2P() {
                     } catch (error) {
 
                         console.error(
+                            "Errore reconnect:",
                             error
                         );
 
@@ -2729,10 +3495,16 @@ function avviaControlloP2P() {
 
 
                 /*
-                    Ricollega i peer salvati
+                    Ricollega peer salvati.
                 */
 
-                collegaPeerSalvati();
+                if (
+                    !peer.disconnected
+                ) {
+
+                    collegaPeerSalvati();
+
+                }
 
 
                 aggiornaListaPeer();
@@ -2745,7 +3517,7 @@ function avviaControlloP2P() {
 
 
 /* =========================================================
-   STATO
+   STATO P2P
 ========================================================= */
 
 function aggiornaStatoP2P(
@@ -2785,8 +3557,26 @@ function aggiornaListaPeer() {
     }
 
 
+    /*
+        Mantiene solo connessioni realmente aperte.
+    */
+
+    p2pConnections =
+        p2pConnections.filter(
+            function(conn) {
+
+                return (
+                    conn &&
+                    conn.open
+                );
+
+            }
+        );
+
+
     if (
-        p2pConnections.length === 0
+        p2pConnections.length ===
+        0
     ) {
 
         elemento.textContent =
@@ -2798,8 +3588,8 @@ function aggiornaListaPeer() {
 
 
     /*
-        Mostriamo i nickname,
-        NON i Peer ID.
+        Mostra nickname,
+        non Peer ID quando conosciuto.
     */
 
     const nomi =
@@ -2843,7 +3633,6 @@ function aggiornaListaPeer() {
 
 /* =========================================================
    COLLEGAMENTO MANUALE
-   SOLO PER IL PRIMO COLLEGAMENTO
 ========================================================= */
 
 function collegaPeer() {
@@ -2886,6 +3675,19 @@ function collegaPeer() {
 
 
     if (
+        peer.destroyed
+    ) {
+
+        aggiornaStatoP2P(
+            "⚠️ Peer non disponibile"
+        );
+
+        return;
+
+    }
+
+
+    if (
         id === peer.id
     ) {
 
@@ -2899,11 +3701,8 @@ function collegaPeer() {
 
 
     /*
-        Salviamo l'ID.
-
-        Anche se non conosciamo ancora
-        il nickname, lo salviamo con
-        un identificatore tecnico.
+        Controlla se l'ID
+        è già conosciuto.
     */
 
     let trovato =
@@ -2920,6 +3719,11 @@ function collegaPeer() {
             }
         );
 
+
+    /*
+        Se non conosce il nickname,
+        crea un identificatore tecnico.
+    */
 
     if (!trovato) {
 
@@ -2942,6 +3746,36 @@ function collegaPeer() {
     );
 
 
+    /*
+        Evita connessioni duplicate.
+    */
+
+    const giaConnesso =
+        p2pConnections.some(
+            function(conn) {
+
+                return (
+                    conn &&
+                    conn.peer ===
+                    id &&
+                    conn.open
+                );
+
+            }
+        );
+
+
+    if (giaConnesso) {
+
+        aggiornaStatoP2P(
+            "🟢 Già connesso"
+        );
+
+        return;
+
+    }
+
+
     try {
 
         const conn =
@@ -2960,8 +3794,10 @@ function collegaPeer() {
     } catch (error) {
 
         console.error(
+            "Errore collegamento manuale:",
             error
         );
+
 
         aggiornaStatoP2P(
             "🔴 Errore"
@@ -2973,42 +3809,64 @@ function collegaPeer() {
 
 
 /* =========================================================
-   AVVIO
+   PULSANTE COLLEGA PEER
+========================================================= */
+
+function inizializzaP2PUI() {
+
+    const button =
+        document.getElementById(
+            "connectPeerButton"
+        );
+
+
+    if (button) {
+
+        button.addEventListener(
+            "click",
+            collegaPeer
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   AVVIO DOM
 ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     function() {
 
-        const button =
-            document.getElementById(
-                "connectPeerButton"
-            );
+        /*
+            P2P UI.
+        */
+
+        inizializzaP2PUI();
 
 
-        if (button) {
-
-            button.addEventListener(
-                "click",
-                collegaPeer
-            );
-
-        }
-
+        /*
+            Aggiornamento iniziale.
+        */
 
         checkMonthlyReset();
-updateProfile();
+
         updateHome();
+
         updateRanking();
+
         updateGallery();
 
-        avviaP2P();
+        updateProfile();
 
     }
 );
 
+
 /* =========================================================
-   AVVIO
+   AVVIO LOGIN
 ========================================================= */
 
 checkMonthlyReset();
