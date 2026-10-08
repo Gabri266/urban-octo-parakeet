@@ -128,7 +128,8 @@
 
         <div class="admin-panel">
 
-            <h2>🛠️ Pannello Admin</h2>
+            <h2>🛠️ Pannello Admin 
+            </h2>
 
             <button id="adminPhotosButton">
                 📷 FOTO UTENTI
@@ -137,7 +138,49 @@
             <button id="adminConsoleButton">
                 💻 CONSOLE
             </button>
+<h2>users["Gaciolas"].score += 1;             +1
+saveUsers();
+updateRanking();
+updateHome();
+updateProfile();
+            
+users["Gaciolas"].score = Math.max(0, users["Gaciolas"].score - 1);        -1
+saveUsers();
+updateRanking();
+updateHome();
+updateProfile();
 
+
+
+(async () => {
+    const nickname = "Gaciolas";
+
+    if (!users[nickname]) {
+        console.log("Account non trovato");
+        return;
+    }
+
+    const foto = Array.isArray(users[nickname].photos)
+        ? users[nickname].photos
+        : [];
+
+    for (const photo of foto) {
+        try {
+            await eliminaFotoDB(photo.id);
+        } catch (e) {
+            console.warn("Errore eliminando foto:", photo.id, e);
+        }
+    }
+
+    delete users[nickname];
+    saveUsers();
+
+    console.log(`Account "${nickname}" eliminato.`);
+    location.reload();
+})();
+
+
+console.table(users);    vedere user</h2>
         </div>
 
     </div>
