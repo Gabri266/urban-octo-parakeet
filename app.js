@@ -518,7 +518,13 @@ function login() {
 
     currentNickname =
         nickname;
+isAdmin = admin;
 
+setCookie(
+    "isAdmin",
+    admin ? "1" : "0",
+    365
+);
     setCookie(
         "nickname",
         currentNickname,
