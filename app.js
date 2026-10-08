@@ -460,8 +460,21 @@ function login() {
         return;
     }
 
-    const nickname =
-        nicknameInput.value.trim();
+   const nicknameInserito = nicknameInput.value.trim();
+   
+   if (nicknameInserito === "") {
+       if (loginError) {
+           loginError.textContent =
+               "Inserisci un nickname.";
+       }
+   
+       nicknameInput.focus();
+       return;
+   }
+   
+   const admin = controllaAdmin(nicknameInserito);
+   
+   const nickname = pulisciNickname(nicknameInserito);
 
     /*
         Controllo nickname vuoto
