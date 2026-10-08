@@ -144,6 +144,34 @@
         </div>
 
     </div>
+<!-- P2P -->
+<div id="p2pPanel" class="p2p-panel">
+    <h2>🌲 RETE SEGHERIA 🪚</h2>
+
+    <p>
+        Il tuo ID:
+        <strong id="myPeerId">Connessione...</strong>
+    </p>
+
+    <input
+        type="text"
+        id="peerIdInput"
+        placeholder="ID dell'altro giocatore"
+        autocomplete="off"
+    >
+
+    <button id="connectPeerButton">
+        🔗 COLLEGA
+    </button>
+
+    <p id="p2pStatus">🔴 Non connesso</p>
+
+    <div id="connectedPeers"></div>
+</div>
+
+<!-- Libreria P2P -->
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
 
 <script src="app.js?v=2"></script>
     
