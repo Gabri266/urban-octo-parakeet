@@ -1533,16 +1533,21 @@ async function addPoint(imageData) {
             Aggiornamento P2P.
         */
 
-        if (
-            typeof inviaAggiornamentoP2P ===
-            "function"
-        ) {
+if (
+    typeof inviaAggiornamentoP2P ===
+    "function"
+) {
 
-            inviaAggiornamentoP2P(
-                user
-            );
+    const ultimaFoto =
+        user.photos[user.photos.length - 1];
 
-        }
+    inviaAggiornamentoP2P(
+        user,
+        ultimaFoto,
+        imageData
+    );
+
+}
 
 
         /*
@@ -2497,7 +2502,9 @@ function avviaP2P() {
             configuraConnessione(
                 conn
             );
-
+            inviaTutteLeFoto(
+                conn
+            );
         }
     );
 
@@ -2882,8 +2889,97 @@ function inviaMessaggio(
 /* =========================================================
    GESTIONE DATI P2P
 ========================================================= */
+async function inviaTutteLeFoto(conn) {
 
-function gestisciDatiP2P(
+    if (
+        !conn ||
+        !conn.open
+    ) {
+        return;
+    }
+
+    for (
+        const nickname of Object.keys(users)
+    ) {
+
+        const user =
+            users[nickname];
+
+        if (
+            !user ||
+            !Array.isArray(user.photos)
+        ) {
+            continue;
+        }
+
+        for (
+            const photo of user.photos
+        ) {
+
+            try {
+
+                const imageData =
+                    await caricaFotoDB(
+                        photo.id
+                    );
+
+                if (!imageData) {
+                    continue;
+                }
+
+                inviaMessaggio(
+                    conn,
+                    {
+
+                        tipo: "PHOTO",
+
+                        eventID:
+                            "sync-" +
+                            photo.id,
+
+                        nickname:
+                            nickname,
+
+                        photo: {
+
+                            id:
+                                photo.id,
+
+                            points:
+                                photo.points,
+
+                            date:
+                                photo.date,
+
+                            object:
+                                photo.object,
+
+                            valid:
+                                photo.valid !== false
+
+                        },
+
+                        image:
+                            imageData
+
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Errore invio foto:",
+                    error
+                );
+
+            }
+
+        }
+
+    }
+
+}
+async function gestisciDatiP2P(
     data,
     conn
 ) {
@@ -2981,7 +3077,196 @@ function gestisciDatiP2P(
         return;
 
     }
+/* =====================================================
+   FOTO RICEVUTA
+===================================================== */
 
+if (
+    data.tipo === "PHOTO"
+) {
+
+    if (
+        !data.eventID ||
+        !data.nickname ||
+        !data.photo ||
+        !data.image
+    ) {
+        return;
+    }
+
+    /*
+        Evita di ricevere due volte
+        la stessa foto.
+    */
+
+    if (
+        receivedMessages.has(
+            data.eventID
+        )
+    ) {
+        return;
+    }
+
+    receivedMessages.add(
+        data.eventID
+    );
+
+
+    /*
+        Crea utente se non esiste.
+    */
+
+    if (
+        !users[data.nickname]
+    ) {
+
+        users[data.nickname] = {
+
+            score: 0,
+
+            month:
+                getCurrentMonth(),
+
+            photos: []
+
+        };
+
+    }
+
+
+    const user =
+        users[data.nickname];
+
+
+    if (
+        !Array.isArray(
+            user.photos
+        )
+    ) {
+
+        user.photos = [];
+
+    }
+
+
+    /*
+        Controlla se la foto
+        esiste già.
+    */
+
+    const giaPresente =
+        user.photos.some(
+            function(photo) {
+
+                return (
+                    photo.id ===
+                    data.photo.id
+                );
+
+            }
+        );
+
+
+    /*
+        Salva immagine
+        in IndexedDB.
+    */
+
+    if (!giaPresente) {
+
+        try {
+
+            await salvaFotoDB(
+                data.photo.id,
+                data.image
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Errore salvataggio foto ricevuta:",
+                error
+            );
+
+            return;
+        }
+
+
+        /*
+            Salva dati foto.
+        */
+
+        user.photos.push({
+
+            id:
+                data.photo.id,
+
+            points:
+                Number(
+                    data.photo.points || 1
+                ),
+
+            date:
+                data.photo.date ||
+                new Date().toISOString(),
+
+            object:
+                data.photo.object ||
+                GAME_CONFIG.obiettivo.nome,
+
+            valid:
+                data.photo.valid !== false
+
+        });
+
+
+        saveUsers();
+
+    }
+
+
+    /*
+        La foto NON aggiunge un altro punto:
+        il punteggio viene già sincronizzato
+        dal messaggio POINT/SYNC.
+    */
+
+
+    updateHome();
+
+    updateRanking();
+
+    updateGallery();
+
+    updateProfile();
+
+
+    /*
+        Propaga la foto agli altri peer.
+    */
+
+    p2pConnections.forEach(
+        function(otherConn) {
+
+            if (
+                otherConn &&
+                otherConn !== conn &&
+                otherConn.open
+            ) {
+
+                inviaMessaggio(
+                    otherConn,
+                    data
+                );
+
+            }
+
+        }
+    );
+
+
+    return;
+}
 
     /* =====================================================
        PUNTO AGGIUNTO
@@ -3375,17 +3660,19 @@ function sincronizzaUtenti(
 ========================================================= */
 
 function inviaAggiornamentoP2P(
-    user
+    user,
+    photo,
+    imageData
 ) {
 
     if (
         !user ||
-        !currentNickname
+        !photo ||
+        !currentNickname ||
+        !imageData
     ) {
-
         return;
     }
-
 
     const eventID =
         currentNickname +
@@ -3396,33 +3683,33 @@ function inviaAggiornamentoP2P(
             .toString(36)
             .substring(2, 8);
 
-
-    /*
-        Segna il messaggio
-        come già ricevuto localmente.
-    */
-
     receivedMessages.add(
         eventID
     );
 
-
     const messaggio = {
 
-        tipo:
-            "POINT",
+        tipo: "PHOTO",
 
-        eventID:
-            eventID,
+        eventID: eventID,
 
-        nickname:
-            currentNickname
+        nickname: currentNickname,
+
+        photo: {
+            id: photo.id,
+            points: photo.points,
+            date: photo.date,
+            object: photo.object,
+            valid: photo.valid
+        },
+
+        image: imageData
 
     };
 
-
     /*
-        Invia a tutti i peer.
+        Invia foto a tutti
+        i peer connessi.
     */
 
     p2pConnections.forEach(
