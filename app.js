@@ -1395,7 +1395,390 @@ function initializeLoginScreen() {
     }
 
 }
+/* =========================================================
+   RETE P2P - PEERJS
+========================================================= */
 
+let peer = null;
+let p2pConnections = [];
+
+/* Avvia P2P */
+function avviaP2P() {
+
+    if (typeof Peer === "undefined") {
+        console.error("PeerJS non è stato caricato.");
+        return;
+    }
+
+    peer = new Peer();
+
+    peer.on("open", function(id) {
+
+        console.log("ID P2P:", id);
+
+        const idElement = document.getElementById("myPeerId");
+
+        if (idElement) {
+            idElement.textContent = id;
+        }
+
+        aggiornaStatoP2P("🟢 Online - pronto per collegarsi");
+    });
+
+    /* Quando QUALCUNO si collega a noi */
+    peer.on("connection", function(conn) {
+
+        configuraConnessione(conn);
+
+    });
+
+    peer.on("error", function(error) {
+
+        console.error("Errore P2P:", error);
+
+        aggiornaStatoP2P(
+            "🔴 Errore: " + error.type
+        );
+    });
+}
+
+
+/* Collega questo dispositivo a un altro */
+function collegaPeer() {
+
+    const input = document.getElementById("peerIdInput");
+
+    if (!input) return;
+
+    const id = input.value.trim();
+
+    if (!id) {
+        aggiornaStatoP2P("⚠️ Inserisci un ID");
+        return;
+    }
+
+    if (!peer) {
+        aggiornaStatoP2P("⚠️ P2P non ancora pronto");
+        return;
+    }
+
+    aggiornaStatoP2P("🟡 Connessione in corso...");
+
+    const conn = peer.connect(id, {
+        reliable: true
+    });
+
+    configuraConnessione(conn);
+}
+
+
+/* Configura una connessione */
+function configuraConnessione(conn) {
+
+    if (!conn) return;
+
+    conn.on("open", function() {
+
+        console.log(
+            "Connesso a:",
+            conn.peer
+        );
+
+        p2pConnections.push(conn);
+
+        aggiornaStatoP2P(
+            "🟢 Connesso a " + conn.peer
+        );
+
+        aggiornaListaPeer();
+
+        /* Mandiamo subito i nostri dati */
+        inviaDatiCompleti(conn);
+    });
+
+
+    conn.on("data", function(data) {
+
+        console.log(
+            "Dati ricevuti:",
+            data
+        );
+
+        gestisciDatiP2P(data);
+    });
+
+
+    conn.on("close", function() {
+
+        p2pConnections =
+            p2pConnections.filter(
+                c => c !== conn
+            );
+
+        aggiornaListaPeer();
+
+        aggiornaStatoP2P(
+            "🟡 Connessione chiusa"
+        );
+    });
+
+
+    conn.on("error", function(error) {
+
+        console.error(
+            "Errore connessione:",
+            error
+        );
+    });
+}
+
+
+/* Invia i nostri dati */
+function inviaDatiCompleti(conn) {
+
+    const dati = {
+        tipo: "SYNC",
+        utenti: caricaDatiP2P(),
+        mittente:
+            typeof currentNickname !== "undefined"
+                ? currentNickname
+                : null
+    };
+
+    conn.send(dati);
+}
+
+
+/* Recupera i dati locali */
+function caricaDatiP2P() {
+
+    try {
+
+        const dati =
+            localStorage.getItem("usersData");
+
+        if (!dati) {
+            return {};
+        }
+
+        return JSON.parse(dati);
+
+    } catch (error) {
+
+        console.error(
+            "Errore lettura dati P2P:",
+            error
+        );
+
+        return {};
+    }
+}
+
+
+/* Ricezione dati */
+function gestisciDatiP2P(data) {
+
+    if (!data || !data.tipo) {
+        return;
+    }
+
+    if (data.tipo === "SYNC") {
+
+        console.log(
+            "Sincronizzazione ricevuta:",
+            data.utenti
+        );
+
+        sincronizzaUtenti(data.utenti);
+
+    }
+
+    if (data.tipo === "UPDATE") {
+
+        sincronizzaUtente(data.utente);
+
+    }
+}
+
+
+/* Sincronizza tutti gli utenti */
+function sincronizzaUtenti(utentiRicevuti) {
+
+    if (!utentiRicevuti) return;
+
+    let utentiLocali = caricaDatiP2P();
+
+    let modificato = false;
+
+    Object.keys(utentiRicevuti).forEach(
+        nickname => {
+
+            if (!utentiLocali[nickname]) {
+
+                utentiLocali[nickname] =
+                    utentiRicevuti[nickname];
+
+                modificato = true;
+
+            } else {
+
+                /*
+                 * Per ora prendiamo il punteggio
+                 * più alto conosciuto.
+                 */
+
+                const locale =
+                    utentiLocali[nickname];
+
+                const remoto =
+                    utentiRicevuti[nickname];
+
+                if (
+                    remoto.score >
+                    locale.score
+                ) {
+
+                    locale.score =
+                        remoto.score;
+
+                    modificato = true;
+                }
+            }
+        }
+    );
+
+
+    if (modificato) {
+
+        localStorage.setItem(
+            "usersData",
+            JSON.stringify(utentiLocali)
+        );
+
+        console.log(
+            "Classifica sincronizzata!"
+        );
+
+        /*
+         * Aggiorna la schermata
+         * se le funzioni esistono.
+         */
+
+        if (
+            typeof aggiornaRanking ===
+            "function"
+        ) {
+            aggiornaRanking();
+        }
+
+        if (
+            typeof aggiornaInterfaccia ===
+            "function"
+        ) {
+            aggiornaInterfaccia();
+        }
+    }
+}
+
+
+/* Sincronizza un singolo utente */
+function sincronizzaUtente(utente) {
+
+    if (!utente || !utente.nickname) {
+        return;
+    }
+
+    const utenti = caricaDatiP2P();
+
+    utenti[utente.nickname] = utente;
+
+    localStorage.setItem(
+        "usersData",
+        JSON.stringify(utenti)
+    );
+}
+
+
+/* Invia un aggiornamento a tutti */
+function inviaAggiornamentoP2P(utente) {
+
+    const messaggio = {
+        tipo: "UPDATE",
+        utente: utente
+    };
+
+    p2pConnections.forEach(conn => {
+
+        if (conn.open) {
+            conn.send(messaggio);
+        }
+
+    });
+}
+
+
+/* Stato P2P */
+function aggiornaStatoP2P(testo) {
+
+    const elemento =
+        document.getElementById("p2pStatus");
+
+    if (elemento) {
+        elemento.textContent = testo;
+    }
+}
+
+
+/* Lista dispositivi collegati */
+function aggiornaListaPeer() {
+
+    const elemento =
+        document.getElementById(
+            "connectedPeers"
+        );
+
+    if (!elemento) return;
+
+    if (p2pConnections.length === 0) {
+
+        elemento.textContent =
+            "Nessun giocatore collegato.";
+
+        return;
+    }
+
+    elemento.innerHTML =
+        p2pConnections
+            .map(
+                conn =>
+                    `🟢 ${conn.peer}`
+            )
+            .join("<br>");
+}
+
+
+/* Pulsante collega */
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const button =
+            document.getElementById(
+                "connectPeerButton"
+            );
+
+        if (button) {
+
+            button.addEventListener(
+                "click",
+                collegaPeer
+            );
+
+        }
+
+        avviaP2P();
+    }
+);
 
 /* =========================================================
    AVVIO
