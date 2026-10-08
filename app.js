@@ -3877,7 +3877,544 @@ document.addEventListener(
     }
 );
 
+/* =========================================================
+   ADMIN - FOTO DI TUTTI GLI UTENTI
+========================================================= */
 
+async function apriAdminFoto() {
+
+    if (!isAdmin) {
+        return;
+    }
+
+    let overlay =
+        document.getElementById("adminPhotosOverlay");
+
+    if (!overlay) {
+
+        overlay = document.createElement("div");
+
+        overlay.id = "adminPhotosOverlay";
+
+        overlay.style.position = "fixed";
+        overlay.style.inset = "0";
+        overlay.style.background = "rgba(0,0,0,0.85)";
+        overlay.style.zIndex = "99999";
+        overlay.style.overflowY = "auto";
+        overlay.style.padding = "20px";
+        overlay.style.boxSizing = "border-box";
+
+        document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = "";
+
+    const box = document.createElement("div");
+
+    box.style.maxWidth = "700px";
+    box.style.margin = "0 auto";
+    box.style.background = "#222";
+    box.style.borderRadius = "15px";
+    box.style.padding = "20px";
+    box.style.color = "white";
+
+    const title = document.createElement("h2");
+
+    title.textContent =
+        "📷 FOTO DI TUTTI GLI UTENTI";
+
+    box.appendChild(title);
+
+    const close = document.createElement("button");
+
+    close.textContent = "✕ CHIUDI";
+
+    close.style.width = "100%";
+    close.style.marginBottom = "20px";
+
+    close.addEventListener(
+        "click",
+        function() {
+
+            overlay.remove();
+
+        }
+    );
+
+    box.appendChild(close);
+
+    let trovate = false;
+
+    for (
+        const nickname of Object.keys(users)
+    ) {
+
+        const user =
+            users[nickname];
+
+        if (
+            !user ||
+            !Array.isArray(user.photos) ||
+            user.photos.length === 0
+        ) {
+            continue;
+        }
+
+        trovate = true;
+
+        const userTitle =
+            document.createElement("h3");
+
+        userTitle.textContent =
+            `${nickname} — ${user.score} punti`;
+
+        box.appendChild(userTitle);
+
+        for (
+            const photo of [...user.photos].reverse()
+        ) {
+
+            const item =
+                document.createElement("div");
+
+            item.style.background = "#333";
+            item.style.borderRadius = "12px";
+            item.style.padding = "10px";
+            item.style.marginBottom = "15px";
+
+            const image =
+                document.createElement("img");
+
+            image.style.width = "100%";
+            image.style.maxHeight = "400px";
+            image.style.objectFit = "contain";
+            image.style.display = "block";
+            image.style.borderRadius = "10px";
+
+            try {
+
+                const imageData =
+                    await caricaFotoDB(photo.id);
+
+                if (imageData) {
+                    image.src = imageData;
+                }
+
+            } catch (error) {
+
+                console.error(
+                    "Errore caricamento foto admin:",
+                    error
+                );
+
+            }
+
+            item.appendChild(image);
+
+            const info =
+                document.createElement("p");
+
+            info.textContent =
+                `${photo.object || "Reperto"} — +${photo.points || 1} punto`;
+
+            item.appendChild(info);
+
+            const validLabel =
+                document.createElement("p");
+
+            validLabel.textContent =
+                photo.valid === false
+                    ? "❌ FOTO NON VALIDA"
+                    : "✅ FOTO VALIDA";
+
+            item.appendChild(validLabel);
+
+
+            /* =========================
+               RENDI NON VALIDA
+            ========================= */
+
+            const invalidButton =
+                document.createElement("button");
+
+            invalidButton.textContent =
+                photo.valid === false
+                    ? "✅ RENDI VALIDA"
+                    : "❌ RENDI NON VALIDA";
+
+            invalidButton.style.width = "100%";
+
+            invalidButton.addEventListener(
+                "click",
+                async function() {
+
+                    if (
+                        photo.valid === false
+                    ) {
+
+                        photo.valid = true;
+
+                        user.score += 1;
+
+                    } else {
+
+                        photo.valid = false;
+
+                        user.score =
+                            Math.max(
+                                0,
+                                user.score - 1
+                            );
+
+                    }
+
+                    saveUsers();
+
+                    updateHome();
+                    updateRanking();
+                    updateGallery();
+                    updateProfile();
+
+                    await apriAdminFoto();
+
+                }
+            );
+
+            item.appendChild(
+                invalidButton
+            );
+
+
+            /* =========================
+               ELIMINA FOTO
+            ========================= */
+
+            const deleteButton =
+                document.createElement("button");
+
+            deleteButton.textContent =
+                "🗑️ ELIMINA FOTO";
+
+            deleteButton.style.width = "100%";
+            deleteButton.style.marginTop = "8px";
+
+            deleteButton.addEventListener(
+                "click",
+                async function() {
+
+                    const conferma =
+                        confirm(
+                            `Eliminare definitivamente la foto di ${nickname}?`
+                        );
+
+                    if (!conferma) {
+                        return;
+                    }
+
+                    try {
+
+                        await eliminaFotoDB(
+                            photo.id
+                        );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Errore eliminazione foto:",
+                            error
+                        );
+
+                    }
+
+                    const index =
+                        user.photos.indexOf(
+                            photo
+                        );
+
+                    if (
+                        index !== -1
+                    ) {
+
+                        user.photos.splice(
+                            index,
+                            1
+                        );
+
+                    }
+
+                    /*
+                        La foto dava 1 punto
+                        soltanto se era valida.
+                    */
+
+                    if (
+                        photo.valid !== false
+                    ) {
+
+                        user.score =
+                            Math.max(
+                                0,
+                                user.score - 1
+                            );
+
+                    }
+
+                    saveUsers();
+
+                    updateHome();
+                    updateRanking();
+                    updateGallery();
+                    updateProfile();
+
+                    await apriAdminFoto();
+
+                }
+            );
+
+            item.appendChild(
+                deleteButton
+            );
+
+            box.appendChild(
+                item
+            );
+        }
+    }
+
+    if (!trovate) {
+
+        const empty =
+            document.createElement("p");
+
+        empty.textContent =
+            "Nessuna fotografia presente.";
+
+        box.appendChild(
+            empty
+        );
+
+    }
+
+    overlay.appendChild(
+        box
+    );
+}
+
+
+/* =========================================================
+   ADMIN - CONSOLE
+========================================================= */
+
+function apriAdminConsole() {
+
+    if (!isAdmin) {
+        return;
+    }
+
+    let overlay =
+        document.getElementById("adminConsoleOverlay");
+
+    if (!overlay) {
+
+        overlay = document.createElement("div");
+
+        overlay.id = "adminConsoleOverlay";
+
+        overlay.style.position = "fixed";
+        overlay.style.inset = "0";
+        overlay.style.background = "rgba(0,0,0,0.9)";
+        overlay.style.zIndex = "99999";
+        overlay.style.padding = "20px";
+        overlay.style.boxSizing = "border-box";
+
+        document.body.appendChild(
+            overlay
+        );
+    }
+
+    overlay.innerHTML = "";
+
+    const box =
+        document.createElement("div");
+
+    box.style.maxWidth = "900px";
+    box.style.margin = "0 auto";
+    box.style.background = "#111";
+    box.style.color = "#00ff66";
+    box.style.padding = "20px";
+    box.style.borderRadius = "15px";
+    box.style.fontFamily = "monospace";
+
+    const title =
+        document.createElement("h2");
+
+    title.textContent =
+        "💻 CONSOLE ADMIN";
+
+    box.appendChild(
+        title
+    );
+
+    const close =
+        document.createElement("button");
+
+    close.textContent =
+        "✕ CHIUDI";
+
+    close.style.width = "100%";
+    close.style.marginBottom = "20px";
+
+    close.addEventListener(
+        "click",
+        function() {
+
+            overlay.remove();
+
+        }
+    );
+
+    box.appendChild(
+        close
+    );
+
+
+    const consoleArea =
+        document.createElement("div");
+
+    consoleArea.style.background =
+        "#000";
+
+    consoleArea.style.padding =
+        "15px";
+
+    consoleArea.style.borderRadius =
+        "10px";
+
+    consoleArea.style.minHeight =
+        "300px";
+
+    consoleArea.style.whiteSpace =
+        "pre-wrap";
+
+    let testo =
+        "=== PUNTI ADMIN CONSOLE ===\n\n";
+
+    testo +=
+        `Admin: ${currentNickname}\n`;
+
+    testo +=
+        `Utenti: ${Object.keys(users).length}\n`;
+
+    testo +=
+        `Peer conosciuti: ${Object.keys(knownPeers).length}\n`;
+
+    testo +=
+        `Connessioni attive: ${p2pConnections.length}\n`;
+
+    testo +=
+        `Peer ID: ${peer ? peer.id : "non disponibile"}\n\n`;
+
+    testo +=
+        "=== UTENTI ===\n";
+
+    Object.keys(users).forEach(
+        function(nickname) {
+
+            const user =
+                users[nickname];
+
+            testo +=
+                `${nickname}: ${Number(user.score || 0)} punti`;
+
+            testo +=
+                ` | foto: ${Array.isArray(user.photos) ? user.photos.length : 0}\n`;
+
+        }
+    );
+
+    testo +=
+        "\n=== RETE P2P ===\n";
+
+    Object.keys(knownPeers).forEach(
+        function(nickname) {
+
+            testo +=
+                `${nickname} -> ${knownPeers[nickname]}\n`;
+
+        }
+    );
+
+    consoleArea.textContent =
+        testo;
+
+    box.appendChild(
+        consoleArea
+    );
+
+
+    const refresh =
+        document.createElement("button");
+
+    refresh.textContent =
+        "🔄 AGGIORNA CONSOLE";
+
+    refresh.style.width =
+        "100%";
+
+    refresh.style.marginTop =
+        "10px";
+
+    refresh.addEventListener(
+        "click",
+        function() {
+
+            overlay.remove();
+
+            apriAdminConsole();
+
+        }
+    );
+
+    box.appendChild(
+        refresh
+    );
+
+    overlay.appendChild(
+        box
+    );
+}
+
+
+/* =========================================================
+   COLLEGAMENTO BOTTONI ADMIN
+========================================================= */
+
+if (adminPhotosButton) {
+
+    adminPhotosButton.addEventListener(
+        "click",
+        function() {
+
+            apriAdminFoto();
+
+        }
+    );
+
+}
+
+
+if (adminConsoleButton) {
+
+    adminConsoleButton.addEventListener(
+        "click",
+        function() {
+
+            apriAdminConsole();
+
+        }
+    );
+
+}
 /* =========================================================
    AVVIO LOGIN
 ========================================================= */
