@@ -898,36 +898,49 @@ function login() {
    ENTER DA TASTIERA
 ========================================================= */
 
-if (loginButton) {
+document.addEventListener("DOMContentLoaded", function () {
 
-    loginButton.addEventListener(
-        "click",
-        login
-    );
+    const loginBtn =
+        document.getElementById("loginButton");
 
-}
+    const nicknameField =
+        document.getElementById("nicknameInput");
 
+    if (!loginBtn) {
+        console.error("ERRORE: loginButton non trovato");
+        return;
+    }
 
-if (nicknameInput) {
+    if (!nicknameField) {
+        console.error("ERRORE: nicknameInput non trovato");
+        return;
+    }
 
-    nicknameInput.addEventListener(
-        "keydown",
-        function(event) {
+    console.log("✅ LOGIN PRONTO");
 
-            if (
-                event.key === "Enter"
-            ) {
+    loginBtn.addEventListener("click", function () {
 
-                event.preventDefault();
+        console.log("✅ CLICK LOGIN");
 
-                login();
+        login();
 
-            }
+    });
+
+    nicknameField.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter") {
+
+            event.preventDefault();
+
+            console.log("✅ ENTER LOGIN");
+
+            login();
 
         }
-    );
 
-}
+    });
+
+});
 
 
 /* =========================================================
@@ -3869,6 +3882,10 @@ document.addEventListener(
    AVVIO LOGIN
 ========================================================= */
 
-checkMonthlyReset();
+document.addEventListener("DOMContentLoaded", function () {
 
-initializeLoginScreen();
+    checkMonthlyReset();
+
+    initializeLoginScreen();
+
+});
