@@ -494,10 +494,6 @@ function login() {
         return;
     }
 
-    /* =========================
-       CONTROLLO ADMIN
-    ========================= */
-
     const admin =
         nicknameInserito.startsWith("!%");
 
@@ -516,12 +512,7 @@ function login() {
         return;
     }
 
-    /* =========================
-       LOGIN
-    ========================= */
-
     currentNickname = nickname;
-
     isAdmin = admin;
 
     setCookie(
@@ -552,7 +543,71 @@ function login() {
 
     initializeApplication();
 }
+   
 isAdmin = admin;
+
+setCookie(
+    "isAdmin",
+    admin ? "1" : "0",
+    365
+);
+    setCookie(
+        "nickname",
+        currentNickname,
+        365
+    );
+
+    /*
+        Creiamo l'utente
+        se non esiste
+    */
+
+    createUser(
+        currentNickname
+    );
+
+    /*
+        Puliamo eventuale errore
+    */
+
+    if (loginError) {
+
+        loginError.textContent =
+            "";
+
+    }
+
+    /*
+        Nascondi login
+    */
+
+    if (loginScreen) {
+
+        loginScreen.classList.add(
+            "hidden"
+        );
+
+    }
+
+    /*
+        Mostra app
+    */
+
+    if (app) {
+
+        app.classList.remove(
+            "hidden"
+        );
+
+    }
+
+    /*
+        Avvio applicazione
+    */
+
+    initializeApplication();
+
+}
 
 setCookie(
     "isAdmin",
@@ -690,7 +745,8 @@ function initializeApplication() {
     createUser(
         currentNickname
     );
-inviaAggiornamentoP2P(user);
+
+
     checkMonthlyReset();
 
     updateHome();
@@ -698,7 +754,7 @@ inviaAggiornamentoP2P(user);
     updateRanking();
 
     updateGallery();
-updateProfile();
+    updateProfile();
 }
 
 
@@ -2941,7 +2997,7 @@ document.addEventListener(
 
 
         checkMonthlyReset();
-
+updateProfile();
         updateHome();
         updateRanking();
         updateGallery();
