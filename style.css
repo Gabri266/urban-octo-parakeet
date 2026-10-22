@@ -141,6 +141,7 @@ input {
 
 /* =========================================================
    LOGIN
+   MODIFICATO: RIQUADRO PIÙ IN ALTO
    ========================================================= */
 
 #loginScreen {
@@ -150,9 +151,12 @@ input {
     display: flex;
 
     justify-content: center;
-    align-items: center;
 
-    padding: 24px;
+    /* Allinea il riquadro più in alto */
+    align-items: flex-start;
+
+    /* Regola la distanza dal bordo superiore */
+    padding: 18vh 24px 24px;
 }
 
 
@@ -162,6 +166,8 @@ input {
     width: min(430px, 100%);
 
     padding: 38px 28px 32px;
+
+    margin-top: 0;
 
     text-align: center;
 
@@ -272,40 +278,59 @@ input {
     transition: .2s;
 }
 
+
 .profile-box {
     text-align: center;
+
     padding: 25px;
+
     margin: 20px auto;
+
     max-width: 400px;
+
     background: rgba(255,255,255,0.08);
+
     border-radius: 18px;
 }
 
+
 .profile-avatar {
     font-size: 60px;
+
     margin-bottom: 10px;
 }
+
 
 .profile-box h2 {
     margin: 10px 0;
 }
 
+
 .admin-panel {
     margin: 20px auto;
+
     padding: 20px;
+
     max-width: 400px;
+
     border-radius: 18px;
+
     background: rgba(120, 80, 30, 0.25);
 }
+
 
 .admin-panel h2 {
     margin-top: 0;
 }
 
+
 .admin-panel button {
     width: 100%;
+
     margin-top: 10px;
 }
+
+
 #nicknameInput::placeholder {
     color: #806344;
 }
@@ -1104,6 +1129,7 @@ input {
 
     .page {
         padding-left: 25px;
+
         padding-right: 25px;
     }
 }
